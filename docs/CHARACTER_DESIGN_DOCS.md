@@ -1,6 +1,6 @@
 # แนวทางการออกแบบตัวละครและงานภาพใหม่ (Enhanced Character & Visual Design)
 
-เอกสารนี้รวบรวมแนวคิดการยกระดับงานภาพ (Visual Upgrade) จากสไตล์ 2D Retro Pixel Art ดั้งเดิมของ LootMarch สู่ **Modern Stylized Dark Fantasy** ที่มีความคมชัด อลังการ แสงเงา dynamic และเอฟเฟกต์การต่อสู้ระดับพรีเมียม
+เอกสารนี้รวบรวมแนวคิดการยกระดับงานภาพ (Visual Upgrade) จากสไตล์ 2D Retro Pixel Art ดั้งเดิมของเกม สู่ **Modern Stylized Dark Fantasy** ที่มีความคมชัด อลังการ แสงเงา dynamic และเอฟเฟกต์การต่อสู้ระดับพรีเมียม
 
 ---
 

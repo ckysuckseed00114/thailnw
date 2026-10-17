@@ -70,7 +70,7 @@ export class CombatEngine implements Authority {
    const reward={lm:(e.boss?45:8)*r*fortune,xp:(e.boss?100:18)*r,bone:(e.boss?15:3)*r,loot:0};
    if(e.boss||random(s)<.24){for(let i=0;i<fortune;i++){this.stash(drop(s,r));reward.loot++;}}
    s.lm+=reward.lm;s.bone+=reward.bone;this.awardXP(reward.xp);this.record(reward);
-   if(e.boss)this.note(`Warden defeated. Clear the guards to open the gate. +${reward.lm} $LM · +${reward.xp} XP`);
+   if(e.boss)this.note(`Warden defeated. Clear the guards to open the gate. +${reward.lm} TH · +${reward.xp} XP`);
   }
   s.enemies=s.enemies.filter(e=>e.hp>0);if(s.target&&!s.enemies.some(e=>e.id===s.target))s.target=0;
   if(!s.enemies.length&&!s.nextRoomAt){
@@ -113,7 +113,7 @@ export class CombatEngine implements Authority {
  }
  dispatch(c:Command){
   const s=this.state;const check=(ok:unknown,message:string)=>{if(!ok)throw new Error(message);};
-  const spend=(lm:number,bone:number)=>{check(s.lm>=lm&&s.bone>=bone,'Not enough $LM or Bone.');s.lm-=lm;s.bone-=bone;};
+  const spend=(lm:number,bone:number)=>{check(s.lm>=lm&&s.bone>=bone,'Not enough TH or Bone.');s.lm-=lm;s.bone-=bone;};
   const named=(value:unknown)=>{const name=cleanName(value);check(name,`Names need 2–${NAME_MAX} letters or numbers (spaces, _ ' . - allowed).`);return name!;};
   if(c.type==='class'){check(CLASSES.includes(c.value),'Unknown class.');check(!s.started,'Your class is already chosen.');const name=c.name===undefined?s.hero.name:named(c.name);s.hero.name=name;s.hero.class=c.value;s.started=true;for(const k of skillsFor(s))s.cooldowns[k.id]=s.now+k.cooldown;this.spawn();return;}
   check(s.started,'Choose your class first.');

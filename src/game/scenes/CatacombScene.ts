@@ -60,7 +60,7 @@ export class CatacombScene extends Phaser.Scene {
   void document.fonts?.load(`16px ${FONT}`).then(()=>{if(this.hero?.plate.active){this.hero.plate.updateText();this.caption.updateText();}});
   this.resizeView();this.scale.on('resize',this.resizeView,this);
   // Dev-only handle for browser debugging (stripped from production builds).
-  if(import.meta.env.DEV)(window as unknown as {__embermarch?:unknown}).__embermarch={scene:this};
+  if(import.meta.env.DEV)(window as unknown as {__thailnw?:unknown}).__thailnw={scene:this};
   this.unsubscribe=this.store.subscribe((s,e)=>this.render(s,e));this.events.once('shutdown',()=>{this.unsubscribe?.();this.scale.off('resize',this.resizeView,this);});
  }
  private resizeView(){const w=this.scale.width,h=this.scale.height;this.cameras.main.setZoom(w<761?Math.max(.72,Math.min(w/670,h/790)):Math.max(w/1750,h/1100)).centerOn(w<761?this.hero.root.x+70:this.journey*ROOM_STRIDE+750,450);}

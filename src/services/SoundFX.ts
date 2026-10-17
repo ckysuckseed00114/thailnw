@@ -1,4 +1,4 @@
-/** Lightweight Web Audio feedback (ported from demos/lootmarch-enhanced). */
+/** Lightweight Web Audio feedback. */
 export class SoundFX {
   private ctx: AudioContext | null = null;
   enabled = true;

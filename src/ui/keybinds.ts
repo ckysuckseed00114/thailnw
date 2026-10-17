@@ -1,4 +1,5 @@
 import {effect,signal} from '@preact/signals';
+import {readStored} from '../services/legacyStorage';
 
 // Remappable keyboard shortcuts (UI_UX_PLAN 2.5). One table drives the hotbar, targeting and window hotkeys.
 export const ACTIONS=[
@@ -18,10 +19,10 @@ export function normalizeKey(key:string):string|null{
  if(!key||RESERVED.has(key))return null;if(key===' ')return 'Space';
  return key.length===1?key.toUpperCase():key;
 }
-const STORE='embermarch.keys.v1';
+const STORE='thailnw.keys.v1';
 function load():Record<Action,string>{
  const keys={...DEFAULT_KEYS};
- try{const raw=JSON.parse(localStorage.getItem(STORE)??'{}') as Record<string,unknown>;const used=new Set<string>();
+ try{const raw=JSON.parse(readStored(STORE)??'{}') as Record<string,unknown>;const used=new Set<string>();
   for(const a of ACTIONS){const k=typeof raw[a.id]==='string'?normalizeKey(raw[a.id] as string):null;if(k&&!used.has(k)){keys[a.id]=k;}used.add(keys[a.id]);}
   // A corrupted file could leave duplicates; fall back to defaults rather than guess.
   if(new Set(Object.values(keys)).size!==ACTIONS.length)return {...DEFAULT_KEYS};

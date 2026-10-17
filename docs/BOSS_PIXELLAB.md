@@ -50,4 +50,4 @@ node tools/pixellab/pl.mjs zip <character_id> artifacts/<name>/pixellab-complete
 
 ## ทดสอบ
 
-test 111/111, TypeScript และ build ผ่าน · ตรวจในเบราว์เซอร์ (dev hook `window.__embermarch`): ห้องบอสใช้เฟรมครบทุกท่า (ยืน 5, เดิน, ทุบ 7, เรียก 7) · ง้างทุบหนักพร้อมวงแดง · เรียก Warden's Guard ที่ HP 2/3 · มือถือ 375×812 ไม่บัง HUD · ไม่มี console error
+test 111/111, TypeScript และ build ผ่าน · ตรวจในเบราว์เซอร์ (dev hook `window.__thailnw`): ห้องบอสใช้เฟรมครบทุกท่า (ยืน 5, เดิน, ทุบ 7, เรียก 7) · ง้างทุบหนักพร้อมวงแดง · เรียก Warden's Guard ที่ HP 2/3 · มือถือ 375×812 ไม่บัง HUD · ไม่มี console error

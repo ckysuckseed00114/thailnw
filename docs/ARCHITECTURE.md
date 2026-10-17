@@ -1,4 +1,4 @@
-# Embermarch architecture
+# Thailnw architecture
 
 > โครงสร้าง UI และผลตรวจล่าสุด (17 ต.ค. 2026): [CURRENT_STRUCTURE_TH.md](CURRENT_STRUCTURE_TH.md) เอกสารนี้เน้นกฎเกมและขอบเขตระบบ; HUD ปัจจุบันใช้ Preact ร่วมกับ `UIManager` เดิม และรูปแบบเซฟเป็น v6
 
@@ -28,8 +28,8 @@ HTML input → Store.dispatch → Authority / CombatEngine
 - XP is the cost of the next level: level 2 costs 250; level L≥3 costs `round(1000 × 1.16^(L−2))`. Level-up fully heals and grants one point. A technical level ceiling of 1000 guards malformed/infinite progression.
 - Regions use continuous index `(floor−1) × 11 + region`. HP scales by `1.4^(R−1)`; damage by `1.35^(R−1)`.
 - Forge is compounded: `base × (1 + rarityRate)^forge`. Rates are 4/5/6/8/11/15%. Salvage is base Bone plus floor(25% invested Bone).
-- Floor F costs `3000 × 2^(F−2)` LM and `800 × 2^(F−2)` Bone, gated by previous floor completion.
-- Shrines roll 8% on room entry, last 60 seconds, and replace the previous blessing. Fortune doubles LM and item count. Renewal heals 3% max HP/s.
+- Floor F costs `3000 × 2^(F−2)` TH and `800 × 2^(F−2)` Bone, gated by previous floor completion.
+- Shrines roll 8% on room entry, last 60 seconds, and replace the previous blessing. Fortune doubles TH and item count. Renewal heals 3% max HP/s.
 - Offline rewards use the ratio of reward totals to recorded active seconds in minute buckets over the preceding 24 hours. Dead time and room transitions count in the denominator. Each absence pays 75% for up to 8 hours; no history means no rewards. Rewards remain pending until claimed. The resume timestamp is saved immediately, preventing re-counting an absence on a normal reload. Pending rewards from multiple distinct absences can accumulate.
 
 ## Balance decisions where the brief did not specify values
@@ -42,19 +42,19 @@ HTML input → Store.dispatch → Authority / CombatEngine
 | Enemy timing | 2.4s attacks; boss 2.2s; every third boss hit is a 2.5× slam |
 | Halls and walking | Each room has two hall waves (left: 1 monster, right: 2 or the boss). The next wave sleeps until the hero walks in: `HALL_WALK/moveSpeed` (2s at base 230 px/s). Clearing the room lights the checkpoint rune in the open passage between rooms; walking past it (`ROOM_WALK/moveSpeed`) moves the room on, and the hero keeps walking into the next room's first hall (`ENTRY_WALK/moveSpeed`). No doors and no pauses: every walk is straight at the hero's move speed. Move speed comes from `stats()`, so speed gear shortens both; death respawns after 3s in current region room 1 |
 | Progression | Auto advance can be toggled; region 11 repeats until the seal is opened |
-| Rewards | Normal: 8 LM / 18 XP / 3 Bone × region; boss: 45 / 100 / 15 × region |
+| Rewards | Normal: 8 TH / 18 XP / 3 Bone × region; boss: 45 / 100 / 15 × region |
 | Item chance | 24% per normal kill, guaranteed per boss |
 | Storage caps | Inventory 300, loot chest 150 (`MAX_INVENTORY`/`MAX_CHEST`). Drops and AFK loot that arrive at a full chest are auto-salvaged into Bone; Claim moves only what fits; the item cache cannot be bought into a full chest. Older saves above the cap still load. |
 | Rarity weights | 50%, 27%, 15%, 6%, 1.8%, 0.2% |
 | Item base power | round((3 + 2×region) × (1 + 0.65×rarityIndex)) |
 | Gear stats | Weapon/Ring/Amulet: damage; Helmet/Armor/Shield: 5×power HP; Boots: speed |
-| Forge price | ceil(40 LM and 20 Bone × (rarityIndex+1) × 1.14^forge) |
+| Forge price | ceil(40 TH and 20 Bone × (rarityIndex+1) × 1.14^forge) |
 | Mythic salvage | 3000 Bone; other rarities use the requested values |
 | Pets | All four available; one active; base cooldown 8s |
-| Pet XP | 100×current level per level; feeding costs 1 Bone + 1 LM for 10 XP |
+| Pet XP | 100×current level per level; feeding costs 1 Bone + 1 TH for 10 XP |
 | Pet effects | Leafhopper heals 10% HP; Shellby blocks next hit; Craboulder 90% damage + 1s stun; Emberkit 120% damage |
 | Pet scaling | 1 + 0.1×(level−1); Shellby reduces cooldown because its block is binary |
-| Shop | 50 LM full heal; 150 LM random item cache |
+| Shop | 50 TH full heal; 150 TH random item cache |
 | Quests | Three one-time milestones; not time-sensitive daily quests |
 | Spear geometry | Enemy formation is a line, so Pierce hits the whole formation |
 

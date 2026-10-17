@@ -23,7 +23,7 @@ const store=new Store(engine);bindStore(store);
 function Section({title,children}:{title:string;children:preact.ComponentChildren}){return <section style={{margin:'0 0 28px'}}><h2 class="tf-title" style={{fontSize:'18px',margin:'0 0 12px'}}>{title}</h2>{children}</section>;}
 function Demo(){
  return <main style={{maxWidth:'1040px',margin:'0 auto',padding:'28px 20px 60px',color:'var(--tf-text)',fontFamily:'var(--tf-font-body)'}}>
-  <h1 class="tf-ornate" style={{fontSize:'44px',margin:'0 0 4px'}}>ระบบออกแบบ · Embermarch</h1>
+  <h1 class="tf-ornate" style={{fontSize:'44px',margin:'0 0 4px'}}>ระบบออกแบบ · Thailnw</h1>
   <p style={{color:'var(--tf-text-2)',margin:'0 0 28px'}}>Design tokens, ตัวอักษร และองค์ประกอบ HUD ชุดแรก (UI_UX_PLAN 1.1–1.3)</p>
   <Section title="สี (tokens)">
    <div style={{display:'grid',gridTemplateColumns:'repeat(auto-fill,minmax(120px,1fr))',gap:'10px'}}>

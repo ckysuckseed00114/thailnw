@@ -11,7 +11,7 @@
 
 Limits: no live blockchain, backend deployment, multi-player marketplace, wallet signing, or contract tests. Browser verification was a smoke test, not a full cross-browser automation suite. Multi-tab exclusion is implemented with Web Locks but not covered by the pure unit suite. Gameplay balance at extremely high floors has not been established.
 
-Desktop screenshot: [artifacts/embermarch-desktop.jpg](artifacts/embermarch-desktop.jpg).
+Desktop screenshot: [artifacts/thailnw-desktop.jpg](artifacts/thailnw-desktop.jpg).
 
 ## Immersive HUD revision
 
@@ -20,11 +20,10 @@ Desktop screenshot: [artifacts/embermarch-desktop.jpg](artifacts/embermarch-desk
 - The renderer keeps movement cosmetic; core combat rules and saved data formats are unchanged.
 - Camera follows the hero on narrow screens; verified a 390 × 844 viewport and the default desktop viewport. Inventory opens and scrolls on mobile.
 - TypeScript, production build and all 25 existing regression tests passed. No browser warnings/errors observed after live combat and resizing.
-- Screenshots: [desktop](../artifacts/embermarch-immersive-v2.jpg), [mobile](../artifacts/embermarch-mobile-v2.jpg).
+- Screenshots: [desktop](../artifacts/thailnw-immersive-v2.jpg), [mobile](../artifacts/thailnw-mobile-v2.jpg).
 
 ## Repository cleanup (2026-10-16)
 
-- Vite entry restored at project root; LootMarch Enhanced prototype moved to `demos/lootmarch-enhanced/`.
 - Removed unused `DungeonScene.ts`; active renderer is `src/game/scenes/CatacombScene.ts`.
 - Live HUD styles in `src/ui/hud/hud.css`; shared dialog/base in `base.css` + `characters.css`; removed legacy `hud-immersive.css` and duplicate shell DOM.
 - Web Audio feedback from the demo mod integrated as `src/services/SoundFX.ts`.

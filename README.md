@@ -1,4 +1,4 @@
-# Embermarch
+# Thailnw
 
 เกม 2D idle dungeon crawler ที่เล่นในเบราว์เซอร์ ขณะนี้เป็นเกม **local single-player**: การต่อสู้และความคืบหน้าคำนวณในเครื่องผู้เล่นและบันทึกด้วย LocalStorage ยังไม่มีเซิร์ฟเวอร์ บัญชีผู้เล่น ตลาดซื้อขาย หรือธุรกรรม Web3
 
@@ -33,4 +33,4 @@ pnpm build   # ตรวจ TypeScript และสร้าง dist/
 
 อ่านภาพรวมที่ [docs/CURRENT_STRUCTURE_TH.md](docs/CURRENT_STRUCTURE_TH.md) · ความเสี่ยงและขอบเขตเกมหลัก vs demo ที่ [docs/RISKS.md](docs/RISKS.md) · แผน UI ที่ [docs/UI_UX_PLAN.md](docs/UI_UX_PLAN.md)
 
-หน้า `/design.html` เป็นตัวอย่าง design system ส่วน `demos/lootmarch-enhanced/` เป็นเดโมแยก ไม่ใช่เกมหลัก
+หน้า `/design.html` เป็นตัวอย่าง design system

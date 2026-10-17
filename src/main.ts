@@ -32,4 +32,4 @@ async function boot(){
  // Keep the exclusive browser lock alive until this document unloads.
  await new Promise<void>(()=>{});
 }
-if(navigator.locks){void navigator.locks.request('embermarch-authority',{ifAvailable:true},async lock=>{if(!lock){fatal('Your adventure is already running in another tab. Close that tab and try again to protect your save.');return;}await boot();});}else fatal('This browser does not support the save lock required by this game. Use a modern browser on localhost or HTTPS.');
+if(navigator.locks){void navigator.locks.request('thailnw-authority',{ifAvailable:true},async lock=>{if(!lock){fatal('Your adventure is already running in another tab. Close that tab and try again to protect your save.');return;}await boot();});}else fatal('This browser does not support the save lock required by this game. Use a modern browser on localhost or HTTPS.');

@@ -1,4 +1,4 @@
-# โครงสร้างและสถานะล่าสุดของ Embermarch
+# โครงสร้างและสถานะล่าสุดของ Thailnw
 
 อัปเดตเกมเพลย์ 17 ตุลาคม 2026; อ่านคู่กับ [HANDOFF.md](HANDOFF.md)
 
@@ -48,7 +48,7 @@ main.ts → วงรอบ tick / save / AFK → LocalSaveRepository
 
 - 17 ต.ค. 2026: TypeScript ผ่าน; Vitest **105/105** ผ่านใน 12 ไฟล์; Vite build ผ่าน; Axe/Spear ทดสอบเดสก์ท็อปและมือถือแล้ว
 - Build แจ้งเพียงขนาด chunk ของ Phaser ประมาณ 1.2 MB ก่อนบีบอัด (332 KB gzip); เป็นเรื่องขนาดดาวน์โหลดที่ควรวัดบนอุปกรณ์เป้าหมาย
-- Save อยู่ใน LocalStorage (`embermarch.save.v1`, format v5), ไม่ได้ซิงก์ข้ามอุปกรณ์ และผู้เล่นแก้ข้อมูลฝั่งเครื่องได้ เซฟ v4 ที่กำลังอยู่ห้องบอสเดิม 5 จะถูกย้ายเป็นห้อง 8 ระหว่าง migration
+- Save อยู่ใน LocalStorage (`thailnw.save.v1`, format v5), ไม่ได้ซิงก์ข้ามอุปกรณ์ และผู้เล่นแก้ข้อมูลฝั่งเครื่องได้ เซฟ v4 ที่กำลังอยู่ห้องบอสเดิม 5 จะถูกย้ายเป็นห้อง 8 ระหว่าง migration
 - ระบบ marketplace ยังเป็นหน้ารอใช้งาน; ไม่มี backend, multiplayer, wallet, smart contract หรือเงินจริง
 - เอกสารเก่าบางฉบับอธิบายสถาปัตยกรรมก่อน HUD v2 และก่อน save v4; ใช้ไฟล์นี้และ `HANDOFF_UIUX_CHATGPT.md` อ่านสถานะล่าสุด
 

@@ -1,9 +1,10 @@
 import {createState} from '../core/GameState';
+import {readStored} from './legacyStorage';
 import {ALL_SKILL_IDS} from '../core/Skills';
 import {ATTRIBUTES,CLASSES,DEFAULT_NAME,PETS,RARITIES,SLOTS,cleanName,type GameState,type Item} from '../core/models';
 export interface SaveRepository {load():GameState|null;save(state:GameState):void}
 // The storage slot keeps its original name; the format version lives inside the save.
-const KEY='embermarch.save.v1';
+const KEY='thailnw.save.v1';
 type Raw=Record<string,unknown>&{version?:unknown;hero?:Record<string,unknown>};
 // One step per format version; each returns a new object so the original stays intact for the backup.
 const STEPS:Record<number,(s:Raw)=>Raw>={
@@ -57,7 +58,7 @@ export function validateSave(value:unknown):value is GameState{
 }
 export class LocalSaveRepository implements SaveRepository {
  load(){
-  const raw=localStorage.getItem(KEY);if(!raw)return null;let parsed:unknown;try{parsed=JSON.parse(raw);}catch{throw new Error('Save cannot be read. Export or clear browser storage to start over.');}
+  const raw=readStored(KEY,true);if(!raw)return null;let parsed:unknown;try{parsed=JSON.parse(raw);}catch{throw new Error('Save cannot be read. Export or clear browser storage to start over.');}
   const s=migrateSave(parsed);if(!validateSave(s))throw new Error('Save validation failed. Existing save has been preserved.');
   // Keep the pre-migration save once, so an upgrade can always be rolled back by hand.
   if(s!==parsed){const backup=`${KEY}.backup-v${(parsed as {version:number}).version}`;try{if(!localStorage.getItem(backup))localStorage.setItem(backup,raw);}catch{/* a full quota must not block loading */}}

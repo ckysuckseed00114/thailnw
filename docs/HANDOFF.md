@@ -1,4 +1,4 @@
-# Embermarch — เอกสารส่งต่องาน (Handoff)
+# Thailnw — เอกสารส่งต่องาน (Handoff)
 
 > อ่านไฟล์นี้ก่อนเริ่มงานทุกครั้ง แล้ว **อัปเดตหัวข้อ "สถานะล่าสุด" และ "บันทึกการส่งต่อ"** ก่อนจบงาน
 > ตรวจล่าสุด: 2026-10-17
@@ -6,9 +6,9 @@
 
 ## 1. ภาพรวม
 
-เกม idle dungeon crawler (แนว LootMarch) เล่นในเบราว์เซอร์ ทำงานแบบ local อย่างเดียว ไม่มี backend
+เกม idle dungeon crawler เล่นในเบราว์เซอร์ ทำงานแบบ local อย่างเดียว ไม่มี backend
 - **Stack:** TypeScript 5.9 (strict) · Vite 7 · Phaser 3.90 · Vitest 3 · pnpm
-- **Git:** repo local บน branch `main` · ตั้ง `origin` = `github.com/ckysuckseed00114/embermarch` แล้ว แต่ **push ยังไม่สำเร็จ** (GitHub ตอบว่า "Repository not found" ให้เช็กชื่อ repo/บัญชี) · baseline commit วันที่ 2026-10-17 · ติดตั้ง Git ไว้ที่ `C:\Program Files\Git` ถ้า shell เดิมหา `git` ไม่เจอ ให้เปิด terminal ใหม่
+- **Git:** repo local บน branch `main` · ตั้ง `origin` = `github.com/ckysuckseed00114/thailnw` แล้ว แต่ **push ยังไม่สำเร็จ** (GitHub ตอบว่า "Repository not found" ให้เช็กชื่อ repo/บัญชี) · baseline commit วันที่ 2026-10-17 · ติดตั้ง Git ไว้ที่ `C:\Program Files\Git` ถ้า shell เดิมหา `git` ไม่เจอ ให้เปิด terminal ใหม่
 
 ```powershell
 pnpm install
@@ -43,18 +43,17 @@ src/ui/
   UIManager.ts             modal ทั้งหมด + HUD ส่วนที่เหลือ (HTML string), คีย์ลัด I/C/P/B/M/Q (M = แผนที่โลก)
   theme/tokens.css         ★ design tokens ธีม Thai Fantasy (`--tf-*`) + คลาส .tf-frame/.tf-bar/.tf-plate/.tf-key
   components/Frame.tsx     Preact: Frame (กรอบไม้/หมึก + มุมลายกนก SVG), Bar (HP/XP)
-  hud/                     HUD v2 (Preact, CSS grid): Hud.tsx mount, gameSignal.ts (state → signal), prefs.ts (ขนาด UI/เสียง/tracker ใน localStorage `embermarch.ui.v1`), PlayerFrame, TopBar (+Purse, QuickSettings), Minimap, QuestTracker, hud.css
+  hud/                     HUD v2 (Preact, CSS grid): Hud.tsx mount, gameSignal.ts (state → signal), prefs.ts (ขนาด UI/เสียง/tracker ใน localStorage `thailnw.ui.v1`), PlayerFrame, TopBar (+Purse, QuickSettings), Minimap, QuestTracker, hud.css
   design/DesignDemo.tsx    หน้า design system (dev เท่านั้น: http://127.0.0.1:5173/design.html)
   ui/hud/                  Preact HUD (PlayerFrame, Hotbar, Minimap, …)
 src/services/
-  Storage.ts               LocalSaveRepository (key `embermarch.save.v1`) + validateSave()
+  Storage.ts               LocalSaveRepository (key `thailnw.save.v1`) + validateSave()
   SoundFX.ts               เสียงสังเคราะห์ด้วย Web Audio (ไม่มีไฟล์เสียง)
 src/styles/                base.css · characters.css · ui/hud/hud.css
 tests/                     Vitest 105 tests รวม core/traversal/sprites/UI และ integrity ของ Sword/Spear/Axe PNG
 public/assets/sword-veteran/  Sword PNG จาก PixelLab: portrait, idle, walk 5 เฟรม, attack 5 เฟรม
 public/assets/spear-lancer/   Spear PNG: portrait, idle 5, walk 5, thrust 5 เฟรม
 public/assets/axe-veteran/    Axe PNG: portrait, idle, walk 5, cleave 5 เฟรม
-demos/lootmarch-enhanced/  prototype แยกต่างหาก (เปิด index.html ตรง ๆ ได้) ไม่ถูก build
 docs/                      เอกสารออกแบบ (ดูตารางข้อ 7)
 artifacts/                 ภาพหน้าจอ/ภาพทดสอบ ไม่ถูก build
 .mcp.json                  เชื่อม PixelLab MCP (ดูข้อ 5)
@@ -71,7 +70,7 @@ Store.notify(state, events) → UIManager (HUD)  +  CatacombScene (วาด)  +
 1. **กฎเกมอยู่ใน `src/core` เท่านั้น** — renderer/UI แค่อ่าน state แล้ววาด ถ้าจะเพิ่มกลไกใหม่ ให้เพิ่ม `Command` ใน `models.ts` → จัดการใน `CombatEngine.dispatch` → เขียน test
 2. **ความสุ่มต้องผ่าน `random(s)`** ใน DropTable (seed อยู่ในเซฟ) ห้ามใช้ `Math.random()` ใน core ไม่งั้น test ไม่ deterministic
 3. **เวลาใน core ใช้ `s.now`** ไม่ใช่ `Date.now()` (ยกเว้น main.ts ตอน resume)
-4. **เปลี่ยนรูปแบบเซฟ** → แก้ `createState` + `validateSave` แล้วเพิ่มขั้นใน `STEPS` ของ `migrateSave()` (Storage.ts) พร้อม test · ตอนนี้ **`version:6`** (v1→v2 เพิ่มชื่อ, v2→v3 cooldown, v3→v4 target, v4→v5 สกิลเดียว/8 ห้อง/boss summons, v5→v6 คลื่นมอนต่อโถง + เวลาเดิน) ตอนโหลดจะ migrate ใน memory และเก็บเซฟเดิมครั้งเดียว · ชื่อ key `embermarch.save.v1` เป็นแค่ชื่อช่องเก็บ ไม่ใช่เวอร์ชัน ถ้าเซฟไม่ผ่าน validation เกมจะหยุดและไม่ลบเซฟ
+4. **เปลี่ยนรูปแบบเซฟ** → แก้ `createState` + `validateSave` แล้วเพิ่มขั้นใน `STEPS` ของ `migrateSave()` (Storage.ts) พร้อม test · ตอนนี้ **`version:6`** (v1→v2 เพิ่มชื่อ, v2→v3 cooldown, v3→v4 target, v4→v5 สกิลเดียว/8 ห้อง/boss summons, v5→v6 คลื่นมอนต่อโถง + เวลาเดิน) ตอนโหลดจะ migrate ใน memory และเก็บเซฟเดิมครั้งเดียว · ชื่อ key `thailnw.save.v1` เป็นแค่ชื่อช่องเก็บ ไม่ใช่เวอร์ชัน ถ้าเซฟไม่ผ่าน validation เกมจะหยุดและไม่ลบเซฟ
 5. timer ใหม่ใน state (`xxxAt`) ต้องเพิ่มใน `resume()` ของ AFKManager ด้วย ไม่งั้นจะเพี้ยนหลังกลับมาจาก offline
 
 ## 4. ระบบเกมสรุปสั้น
@@ -96,7 +95,7 @@ Store.notify(state, events) → UIManager (HUD)  +  CatacombScene (วาด)  +
 
 **อัปเดตฉากและศัตรู:** กล้อง desktop ถอยออกตามสัดส่วนหน้าจอเพื่อเห็นห้องและทางเชื่อมกว้างขึ้น (จอสูงยังรักษาขนาดตัวละคร) · ขยาย sprite ศัตรูเล็กน้อยให้ยังอ่านได้ · มอนสเตอร์แต่ละชนิดมีจังหวะเคลื่อน/หายใจ/กะพริบตาต่างกัน, บอสมีท่าเตรียมทุบและคำรามเมื่อเรียกผู้คุ้มกัน · ทั้งหมดอยู่ใน renderer `CatacombScene.ts`; combat core และเซฟไม่เปลี่ยน · ภาพตรวจ desktop `artifacts/wider-dungeon-lively-enemies.png` · เล่นจริงผ่านหลายห้องและบอส ไม่มี console error ในแท็บทดสอบใหม่
 
-**อัปเดตกระเป๋ารอบ 2:** แยกของสวมใส่ออกจาก grid และความจุกระเป๋า (ยังเก็บใน `inventory` ภายในเพื่อคงเซฟเดิม), กดช่องอุปกรณ์เพื่อดูรายละเอียด/ถอดได้; ถอดไม่ได้เมื่อกระเป๋าเต็ม · เหลือ 4 หมวด ทั้งหมด/อุปกรณ์สวมใส่/วัสดุ/กล่องสมบัติ · วัสดุแสดง Bone และเงิน $LM ตามข้อมูลเกมที่มีจริง · กล่องสมบัติแสดงของที่รอรับและรับได้จากแท็บนั้น · ปรับโทน UI เป็น dark fantasy แบบอ่านง่าย · ภาพ `artifacts/inventory-ui-modern.png` · เพิ่มคำสั่ง `unequip` โดยไม่เปลี่ยนรูปแบบเซฟ · test 109/109 และ build ผ่าน
+**อัปเดตกระเป๋ารอบ 2:** แยกของสวมใส่ออกจาก grid และความจุกระเป๋า (ยังเก็บใน `inventory` ภายในเพื่อคงเซฟเดิม), กดช่องอุปกรณ์เพื่อดูรายละเอียด/ถอดได้; ถอดไม่ได้เมื่อกระเป๋าเต็ม · เหลือ 4 หมวด ทั้งหมด/อุปกรณ์สวมใส่/วัสดุ/กล่องสมบัติ · วัสดุแสดง Bone และเงิน TH ตามข้อมูลเกมที่มีจริง · กล่องสมบัติแสดงของที่รอรับและรับได้จากแท็บนั้น · ปรับโทน UI เป็น dark fantasy แบบอ่านง่าย · ภาพ `artifacts/inventory-ui-modern.png` · เพิ่มคำสั่ง `unequip` โดยไม่เปลี่ยนรูปแบบเซฟ · test 109/109 และ build ผ่าน
 
 **อัปเดตกระเป๋า:** ปรับหน้าต่างกระเป๋าตามภาพอ้างอิงเป็น 3 คอลัมน์: ตัวละครและช่องสวมใส่, ช่องไอเท็มพร้อมกรอง/ค้นหา, และรายละเอียดไอเท็มที่เลือกพร้อมปุ่มคำสั่งเดิม (`src/ui/inventoryView.ts`, `src/ui/inventory.css`, `UIManager.ts`) · ใช้ข้อมูลเซฟและ core เดิม ไม่มีการเปลี่ยนกฎเกมหรือรูปแบบเซฟ · ภาพตรวจหน้าจอ desktop: `artifacts/inventory-ui-reference.png` · ยังไม่ได้ตรวจภาพบน viewport มือถือจริง
 
@@ -111,7 +110,7 @@ Store.notify(state, events) → UIManager (HUD)  +  CatacombScene (วาด)  +
 **ข้อสังเกต / ความเสี่ยง**
 - ยังไม่มี remote/backup นอกเครื่อง (ยังไม่ได้ติดตั้ง `gh`)
 - เคยเจอบั๊กจอดำ: ถ้า Phaser boot ตอน `#game` มีขนาด 0 (เช่น tab เปิดอยู่เบื้องหลัง) WebGL จะ error `Framebuffer status: Incomplete Attachment` แล้วไม่ฟื้น ตอนนี้แก้แล้วใน `main.ts` ให้รอจน `#game` มีขนาดจริงก่อนสร้าง Phaser (ใช้ ResizeObserver) แต่กรณีขนาด 0 ยังไม่ได้ทดสอบซ้ำในเบราว์เซอร์
-- `.claude/launch.json` (`embermarch-dev`) รัน dev server ที่ port 5176 เพื่อให้ทดสอบโดยไม่ทับเซฟจริงที่ port 5173
+- `.claude/launch.json` (`thailnw-dev`) รัน dev server ที่ port 5176 เพื่อให้ทดสอบโดยไม่ทับเซฟจริงที่ port 5173
 - โค้ดเขียนแบบอัดแน่นหนึ่งบรรทัดยาว (UIManager 22 KB, CatacombScene 19 KB, characters.css ทั้งไฟล์อยู่บรรทัดเดียว) ทำให้ diff/review ยาก ถ้าจะแก้ให้ใช้รูปแบบเดิม หรือตกลงกันก่อนว่าจะ format ใหม่
 - มี smoke test ของ shell/dock แล้ว แต่ยังไม่มี automated visual regression ของ Phaser และไม่มี test ของ Web Lock
 - Marketplace มีปุ่มอยู่แต่ตั้งใจปิดไว้ (เงินจำลองเท่านั้น ห้ามผูกกับ wallet/token จริง ดูเหตุผลใน ARCHITECTURE.md)
@@ -140,9 +139,7 @@ Store.notify(state, events) → UIManager (HUD)  +  CatacombScene (วาด)  +
 | [VALIDATION.md](VALIDATION.md) | ประวัติการตรวจแต่ละรอบ |
 | [CHARACTERS_AND_CONNECTED_ROOMS.md](CHARACTERS_AND_CONNECTED_ROOMS.md) | ดีไซน์ 5 อาชีพ + ลำดับการข้ามห้อง (TH) |
 | [SWORD_SPRITE_INTEGRATION.md](SWORD_SPRITE_INTEGRATION.md) | (เลิกใช้แล้ว) การตัดเฟรม sprite ของ Sword แบบเดิม |
-| [GAME_STRUCTURE_DOCS.md](GAME_STRUCTURE_DOCS.md) | data model ตามสเปกต้นฉบับ |
 | [CHARACTER_DESIGN_DOCS.md](CHARACTER_DESIGN_DOCS.md) | art direction |
-| [LOOTMARCH_DOCS.md](LOOTMARCH_DOCS.md) · [LOOTMARCH_VS_CODEX_COMPARISON.md](LOOTMARCH_VS_CODEX_COMPARISON.md) · [CODEX_PROMPT.md](CODEX_PROMPT.md) | เอกสารอ้างอิงเกมต้นแบบและ prompt เดิม |
 
 ## 8. Checklist ก่อนส่งต่องาน (ทำทุกครั้ง)
 
@@ -170,17 +167,17 @@ Store.notify(state, events) → UIManager (HUD)  +  CatacombScene (วาด)  +
 - **2026-10-17 (17)** — สร้าง Spear ด้วย PixelLab (API key ล่าสุดตรงกับที่ตั้งไว้) ตาม prompt side-scrolling/GBA: เกราะทอง-แดงเข้ม, ผ้าคลุมมืด, หอกประดับ; idle/walk/thrust อย่างละ 5 เฟรม, portrait HUD/roster, นำเข้าฉากจริง · ใช้ south-east เพื่อเก็บหอกครบ · ดู [SPEAR_PIXELLAB_TEST.md](SPEAR_PIXELLAB_TEST.md) · test 105/105, TypeScript/build, desktop/mobile browser ผ่าน
 - **2026-10-17 (16)** — ดูวิดีโออ้างอิงของผู้ใช้แล้วสร้าง Axe ผู้ใหญ่เกราะทอง/เหล็ก ผ้าคลุมน้ำเงิน ขวานสองคมจาก PixelLab; walk/cleave 5 เฟรม + portrait UI ใช้จริงในเกม · ดู [AXE_PIXELLAB_TEST.md](AXE_PIXELLAB_TEST.md) · test 103/103 ณ รอบนั้น, desktop/mobile ผ่าน
 - **2026-10-17 (15)** — เชื่อม PixelLab API ด้วย token ใน Windows User environment (ไม่เก็บใน repo), สร้าง Sword สัดส่วนผู้ใหญ่ เกราะทอง/ผ้าคลุมน้ำเงิน 8 ทิศทาง + เดิน/ฟันอย่างละ 5 เฟรม; นำ PNG เข้า Phaser และ portrait/roster พร้อมแก้การจัดแนวเฟรม 88×88 และหน้า roster ไม่ให้ถูกตัดขอบ · ดู [SWORD_PIXELLAB_V2.md](SWORD_PIXELLAB_V2.md) · test 101/101, TypeScript/build, desktop/mobile browser ผ่าน
-- **2026-10-17 (14)** — เพิ่ม dock เมนูบน HUD ล่าสุด: พับ/ขยาย, ย้ายชิดซ้าย-กลาง-ขวา, จำค่าใน `embermarch.dock.v1`; หน้าต่างเมนูเปิดแบบไม่หยุดฉาก, ย่อเข้า dock และเรียกคืน, ลากหัวหน้าต่างหรือกดปุ่มดูดเข้าขอบจอ; มือถือเป็นแถบไอคอนเลื่อนแนวนอน · ไม่เปลี่ยนกฎเกม/เซฟ · เพิ่ม shell interaction test · test 99/99, build และ browser desktop/mobile ผ่าน
+- **2026-10-17 (14)** — เพิ่ม dock เมนูบน HUD ล่าสุด: พับ/ขยาย, ย้ายชิดซ้าย-กลาง-ขวา, จำค่าใน `thailnw.dock.v1`; หน้าต่างเมนูเปิดแบบไม่หยุดฉาก, ย่อเข้า dock และเรียกคืน, ลากหัวหน้าต่างหรือกดปุ่มดูดเข้าขอบจอ; มือถือเป็นแถบไอคอนเลื่อนแนวนอน · ไม่เปลี่ยนกฎเกม/เซฟ · เพิ่ม shell interaction test · test 99/99, build และ browser desktop/mobile ผ่าน
 - **2026-10-17 (13)** — ปรับเกมเพลย์ตามคำขอ: 1 สกิล/อาชีพ, cooldown อย่างเดียว ไม่มี SP/MP, หลบโจมตีปกติแล้วแสดงท่าถอย, 8 ห้อง/region, บอสเรียกลูกน้อง 2 เฟสโดยยังโจมตีและถูกเลือกเป้าได้, save v5 + migration; ดู [GAMEPLAY_UPDATE_2026-10-17.md](GAMEPLAY_UPDATE_2026-10-17.md) · test 97/97, TypeScript/build ผ่าน, browser smoke ผ่าน
-- **2026-10-17 (12)** — ส่งต่องาน UI/UX ให้ ChatGPT: [HANDOFF_UIUX_CHATGPT.md](HANDOFF_UIUX_CHATGPT.md) (มี prompt พร้อมวาง, สถาปัตยกรรม UI, กติกา, core API, งานที่เสร็จ/เหลือ, วิธีตรวจ) + `handoff/embermarch-uiux-handoff.zip` (สร้างใหม่ได้, ไม่ commit) · งานต่อไปของผู้รับคือ Phase 3 เริ่มที่ 3.1–3.3
-- **2026-10-17 (11)** — UI/UX Phase 2 ครบ (2.3–2.5): เลือกเป้าหมายได้ (คลิกศัตรู / T / X) ซึ่งใช้กับการตีปกติ สกิลเป้าเดี่ยว และสัตว์เลี้ยง · ถ้าไม่เลือกจะทำงานแบบเดิมทุกอย่าง · save v4 · Target frame + Boss bar ใหม่ (ระยะ + ตัวนับทุบหนัก) แทน boss-hud เดิม · ป้ายชื่อศัตรู · hit flash / knockback / สั่นจอ (ปิดได้) / VFX ตามธาตุ · ระบบปุ่มลัดกลาง + หน้าต่างเปลี่ยนปุ่ม (บันทึกเฉพาะที่เปลี่ยน) · มือถือ: แชตกับ tracker เปิดได้ทีละอัน · hook debug `window.__embermarch` (มีแค่ตอน dev) · test 101 · ตรวจไม่ทับกันครบทุกขนาด
+- **2026-10-17 (12)** — ส่งต่องาน UI/UX ให้ ChatGPT: [HANDOFF_UIUX_CHATGPT.md](HANDOFF_UIUX_CHATGPT.md) (มี prompt พร้อมวาง, สถาปัตยกรรม UI, กติกา, core API, งานที่เสร็จ/เหลือ, วิธีตรวจ) + `handoff/thailnw-uiux-handoff.zip` (สร้างใหม่ได้, ไม่ commit) · งานต่อไปของผู้รับคือ Phase 3 เริ่มที่ 3.1–3.3
+- **2026-10-17 (11)** — UI/UX Phase 2 ครบ (2.3–2.5): เลือกเป้าหมายได้ (คลิกศัตรู / T / X) ซึ่งใช้กับการตีปกติ สกิลเป้าเดี่ยว และสัตว์เลี้ยง · ถ้าไม่เลือกจะทำงานแบบเดิมทุกอย่าง · save v4 · Target frame + Boss bar ใหม่ (ระยะ + ตัวนับทุบหนัก) แทน boss-hud เดิม · ป้ายชื่อศัตรู · hit flash / knockback / สั่นจอ (ปิดได้) / VFX ตามธาตุ · ระบบปุ่มลัดกลาง + หน้าต่างเปลี่ยนปุ่ม (บันทึกเฉพาะที่เปลี่ยน) · มือถือ: แชตกับ tracker เปิดได้ทีละอัน · hook debug `window.__thailnw` (มีแค่ตอน dev) · test 101 · ตรวจไม่ทับกันครบทุกขนาด
 - **2026-10-17 (10)** — UI/UX 2.1 / 2.2 / 2.6: **ระบบสกิลใหม่ใน core** (6 สกิล/คลาส, คูลดาวน์แยกต่อสกิล, `cast`/`autocast`, save v3 + backup-v2) · event จาก `dispatch` ไม่หายแล้ว (`tick` คืน event ที่สะสมไว้) · core บอกเหตุผลที่หลบได้ DODGE/SHIELD/BLOCK โดยลำดับการสุ่มเหมือนเดิม · Hotbar (ปุ่ม 1–5/R + auto + เดินหน้าอัตโนมัติ แทน battle-footer เดิม) · ตัวเลขดาเมจตามธาตุ + ตั้งค่า + จำกัดจำนวน · กล่องแชต/ระบบแบบแท็บ · toast ย้ายขึ้นไม่ทับ hotbar · ตรวจไม่ทับกันที่ 375/768/1024/1280/1920 · test 88 · **balance sim (seed เดียว):** ความเร็วโดยรวมใกล้เดิม แต่ Sword ตายเพิ่มจาก 901 เป็น 1,809 ครั้งใน 12 ชม. และ Axe แซงคลาสอื่น (region 26 vs 21–23 ใน 3 ชม.) → ต้องจูนใน Balance v2
 - **2026-10-17 (9)** — UI/UX Phase 1 ครบ (1.4–1.6): Quest tracker (ย่อได้, คลิกเปิดสมุดภารกิจ, มือถือเริ่มแบบย่อ) · Top bar ชื่อพื้นที่ + ตั้งค่าด่วน (ขนาด UI 90–125%, เสียง, เต็มจอ) · Purse · HUD เปลี่ยนเป็น CSS grid + safe area (`viewport-fit=cover`) · ซ่อน DOM เดิม (dungeon-title, header, room-objective, shrine-card) · ตรวจไม่ทับกันที่ 375/768/1280/1920 ทั้งที่ 100% และ 125% · test 69 · JS app 100 KB (38 KB gzip)
 - **2026-10-17 (8)** — UI/UX งาน 1.1–1.3 เสร็จ: ติดตั้ง Preact 10 + @preact/signals (JSX ผ่าน tsconfig `jsxImportSource`) · design tokens + ฟอนต์ไทย (Kanit/Sarabun/Srisakdi) · Frame/Bar component · HUD v2 แทนการ์ดเดิม: Player frame (รูป, ชื่อ, Lv, HP, **SP = ชาร์จสกิล ยังไม่ใช่ MP**, XP, buff ศาลเจ้า/โล่/สัตว์เลี้ยง) + มินิแมพวงกลม (node ห้อง, ตำแหน่งตอนเดิน, นาฬิกาจาก `s.now`, M เปิดแผนที่โลก) · หน้า `/design.html` · แก้ปัญหาวรรณยุกต์ไทยโดนตัด (line-height) · test 66 · ทดสอบ desktop+mobile แล้วไม่มี error · JS app 64→94 KB
 - **2026-10-17 (7)** — ได้ภาพอ้างอิง UI แนว Thai Fantasy MMORPG 2 ชุด ("The Shattered Siam" pixel โทนมืด, "Siam Spirit Chronicles" chibi สว่าง) → เขียน [UI_UX_PLAN.md](UI_UX_PLAN.md): แยก component เทียบกับโค้ดปัจจุบัน, 4 เฟส 28 งาน (มีรหัสงาน), palette/ฟอนต์ไทย, ข้อตัดสินใจ U1–U6 (สไตล์ผสม, คง 5 อาชีพ, hotbar+auto, เพิ่ม MP, ชื่อสถานที่ไทย, Preact) · ยังไม่ได้เริ่มเขียนโค้ด
 - **2026-10-17 (6)** — ทิศทางใหม่: เปลี่ยนเป็นเกมออนไลน์และตัด NFT/Token ทั้งหมด → เขียน [ONLINE_PLAN.md](ONLINE_PLAN.md) (ยังเป็นร่าง รอยืนยัน D1–D8) · balance baseline จาก sim 12 ชม.: Floor 1 จบใน 8 นาที, ตาย 901 ครั้ง, forge โตแบบทวีคูณ (สคริปต์ sim ยังอยู่นอก repo จะย้ายเข้า `tools/sim` ในเฟส P1)
 - **2026-10-17 (5)** — ชื่อผู้เล่น: กรอกตอนเลือกอาชีพ และเปลี่ยนภายหลังได้ใน Character panel (Enter หรือปุ่ม Save name) แสดงบน HUD, หัว panel และป้ายใต้ตัวละคร · กติกาชื่อ (`cleanName`) 2–16 ตัว ตัวอักษร/ตัวเลขทุกภาษา รวมไทย + เว้นวรรค _ ' . - · เซฟ v1→v2 พร้อม backup · ช่องชื่อยังเก็บที่พิมพ์และตำแหน่ง caret ไว้แม้ panel จะ re-render · test 63 · ทดสอบในเบราว์เซอร์แล้ว: migrate เซฟจริง, เปลี่ยนชื่อระหว่างต่อสู้, ใส่ชื่อผิดแล้วขึ้นแจ้งเตือน, ชื่อไทย
-- **2026-10-17 (4)** — เปลี่ยนตัวละครทั้งหมดเป็นสไตล์ใกล้ภาพอ้างอิง (LootMarch) แต่เป็นดีไซน์ต้นฉบับ: `PixelSprites.ts` ใหม่ ฮีโร่ 5 อาชีพมุม 3/4 พร้อมเดิน 2 เฟรม มอน 3 แบบ (Mossling/Crypt Sentinel/Cave Stalker) บอสใหม่ · เลขดาเมจ/ฮีล pixel font · วงเตือนบอส · แบนเนอร์และแถบ HP บอส · ป้ายชื่อ · เลิกใช้ Sword raster · test 57 · ทดสอบในเบราว์เซอร์ desktop + mobile แล้วไม่มี error · PixelLab trial เครดิตหมด จึงยังสร้างภาพไม่ได้
+- **2026-10-17 (4)** — เปลี่ยนตัวละครทั้งหมดเป็นสไตล์ใกล้ภาพอ้างอิง แต่เป็นดีไซน์ต้นฉบับ: `PixelSprites.ts` ใหม่ ฮีโร่ 5 อาชีพมุม 3/4 พร้อมเดิน 2 เฟรม มอน 3 แบบ (Mossling/Crypt Sentinel/Cave Stalker) บอสใหม่ · เลขดาเมจ/ฮีล pixel font · วงเตือนบอส · แบนเนอร์และแถบ HP บอส · ป้ายชื่อ · เลิกใช้ Sword raster · test 57 · ทดสอบในเบราว์เซอร์ desktop + mobile แล้วไม่มี error · PixelLab trial เครดิตหมด จึงยังสร้างภาพไม่ได้
 - **2026-10-17 (3)** — จำกัดขนาดคลัง: inventory 300 / chest 150 ของที่ล้นจะ auto-salvage เป็น Bone (กันเซฟโตจนเกินโควตา LocalStorage) · UI แสดง x/300 · เพิ่ม 6 tests (รวม 37) · ทดสอบในเบราว์เซอร์ที่ 127.0.0.1:5176 (localhost:5176 ติด Web Lock จาก tab อื่น)
 - **2026-10-17 (2)** — smoke test ในเบราว์เซอร์ผ่าน · แก้บั๊กจอดำเมื่อ boot ตอน container มีขนาด 0 (`main.ts`) · เพิ่ม `.claude/launch.json` · PixelLab tools ต้องใช้ session ใหม่ถึงจะโหลด
 - **2026-10-17** — เชื่อม PixelLab MCP (`.mcp.json` + env `PIXELLAB_API_TOKEN`) · วิเคราะห์โครงสร้างแล้วสร้างเอกสารนี้ + `CLAUDE.md` · test 31/31 และ build ผ่าน · แก้ README/ARCHITECTURE ที่ข้อมูลเก่า (จำนวน test และเวลาข้ามห้อง) · ติดตั้ง Git, `git init`, baseline commit (ไม่มี token ใน repo, ignore `.pnpm-store`/`.env`)

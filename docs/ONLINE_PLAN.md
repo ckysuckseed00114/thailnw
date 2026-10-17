@@ -1,4 +1,4 @@
-# แผนงาน: Embermarch Online (UI/UX ใหม่ · Balance ใหม่ · ตัด NFT/Token)
+# แผนงาน: Thailnw Online (UI/UX ใหม่ · Balance ใหม่ · ตัด NFT/Token)
 
 > สถานะ: **ร่างแผน** รอยืนยันข้อตัดสินใจในหัวข้อ 8 · วันที่ 2026-10-17
 > แผนภาพทั้งหมดเขียนเป็น Mermaid (เปิดบน GitHub หรือ VS Code + Markdown Preview Mermaid ได้)
@@ -8,7 +8,7 @@
 | จาก (ตอนนี้) | ไป (เป้าหมาย) |
 | --- | --- |
 | เกม idle เล่นคนเดียว เซฟใน LocalStorage | เกมออนไลน์ มีบัญชีผู้เล่นและเซฟบนเซิร์ฟเวอร์ |
-| สกุลเงิน `$LM` ตั้งใจให้ผูกกับ token/wallet | สกุลเงินในเกมล้วน (**Gold** + **Bone**) ไม่มีมูลค่านอกเกม |
+| สกุลเงิน `TH` ตั้งใจให้ผูกกับ token/wallet | สกุลเงินในเกมล้วน (**Gold** + **Bone**) ไม่มีมูลค่านอกเกม |
 | เครื่องผู้เล่นเป็นตัวตัดสินผล (โกงได้) | **เซิร์ฟเวอร์เป็นตัวตัดสิน** (server-authoritative) ส่วน client มีหน้าที่แสดงผลอย่างเดียว |
 | Balance ไม่เคยวัดค่าจริง | Balance วัดด้วย simulation ทุกครั้งที่แก้ และมีเกณฑ์ผ่าน/ไม่ผ่าน |
 | HUD หนาแน่น, ไม่มี onboarding, ปุ่ม Marketplace ที่ไม่ทำงาน | UI ที่ออกแบบใหม่ทั้งระบบ เน้นมือถือ มี social (แชต อันดับ ผู้เล่นอื่น) |
@@ -21,7 +21,7 @@
 
 ```mermaid
 gantt
-    title Embermarch Online (ประมาณ 15 สัปดาห์ สำหรับทีม 1–2 dev)
+    title Thailnw Online (ประมาณ 15 สัปดาห์ สำหรับทีม 1–2 dev)
     dateFormat  YYYY-MM-DD
     axisFormat  %d %b
     section P0 เตรียม
@@ -57,15 +57,14 @@ P1 (Balance) กับ P2 (UI/UX) ทำคู่ขนานกับ P3 (Backe
 
 | จุด | สิ่งที่มี | แผน |
 | --- | --- | --- |
-| สกุลเงิน `$LM` (UI, log, CombatEngine) | ชื่อแบบ token ticker | เปลี่ยนเป็น **Gold** · ใน state ใช้ `gold` แทน `lm` ด้วย save migration v2→v3 |
+| สกุลเงินเดิม `$LM` (ชื่อแบบ token ticker) | เปลี่ยนแล้ว (2026-10-18) | ใช้ **TH** ใน UI และข้อความ · ชื่อฟิลด์ใน state ยังเป็น `lm` (เปลี่ยนได้ภายหลังพร้อม save migration) |
 | `.wallet` (HTML/CSS) | กล่องแสดงเงินชื่อ wallet | เปลี่ยนชื่อเป็น `.purse` / `currency-bar` |
 | Footer "Simulated currency · No wallet connected" | ข้อความ Web3 | ลบ |
 | แผง **Marketplace** (ปุ่ม M) | "requires … wallet integration" | ลบออกจาก P0 แล้วค่อยกลับมาเป็น **Auction House** (ใช้ Gold เท่านั้น) ในเฟสหลัง launch |
-| `docs/GAME_STRUCTURE_DOCS.md`, `LOOTMARCH_*`, `CODEX_PROMPT.md` | สถาปัตยกรรม Web3, Holder Bonus, Tokenomics, Price Oracle | ย้ายไปไว้ใน `docs/archive/` และติดป้ายว่า "อ้างอิงเกมต้นแบบ ไม่ใช่สเปกของเรา" |
 | `ARCHITECTURE.md` หัวข้อ "Production and Web3 migration" | แนวทางผูก wallet | เขียนใหม่เป็น "Online architecture" ตามหัวข้อ 3 |
 | Holder Boost (ภาพอ้างอิง) | โบนัสตามจำนวนเหรียญที่ถือ | **ไม่ทำ** ถ้าต้องการให้รางวัลคนเล่นต่อเนื่อง ให้ใช้ระบบ daily login/season pass ที่ไม่ใช้เงินแทน |
 
-เกณฑ์ว่าเสร็จ: `grep -ri "wallet\|token\|\$LM\|nft\|web3" src/` ต้องไม่เจอ (ยกเว้น auth token) และ test ผ่านทั้งหมด
+เกณฑ์ว่าเสร็จ: `grep -ri "wallet\|token\|\TH\|nft\|web3" src/` ต้องไม่เจอ (ยกเว้น auth token) และ test ผ่านทั้งหมด
 
 ---
 
@@ -330,7 +329,7 @@ flowchart LR
 
 ## 9. ขั้นแรกที่ทำได้ทันที (ไม่ต้องรอ backend)
 
-1. P0 ตัด NFT/Token + เปลี่ยน `$LM` → Gold (save v3 migration) — ประมาณ 1–2 วัน
+1. P0 ตัด NFT/Token + เปลี่ยน `TH` → Gold (save v3 migration) — ประมาณ 1–2 วัน
 2. ย้าย simulation เข้า `tools/sim` + รายงาน baseline (ตัวเลขในหัวข้อ 4.1) — ประมาณ 1 วัน
 3. แยก repo เป็น workspace packages — ประมาณ 1–2 วัน
 4. เริ่ม wireframe HUD ใหม่

@@ -29,7 +29,7 @@ describe('game shell',()=>{
    expect(document.querySelector('.inventory-ui')).toBeTruthy();
    document.querySelector<HTMLElement>('[data-action="panel-snap"]')!.click();
    expect(ui.dialog.dataset.snap).toBe('right');
-  }finally{Object.assign(proto,original);localStorage.removeItem('embermarch.dock.v1');}
+  }finally{Object.assign(proto,original);localStorage.removeItem('thailnw.dock.v1');}
  });
  it('mounts Phaser parent and save status for HUD v2',()=>{
   const s=createState(1700000000000,1);s.started=true;

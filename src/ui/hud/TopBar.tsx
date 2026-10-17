@@ -42,7 +42,7 @@ export function TopBar({sfx}:{sfx:SoundFX}){
 export function Purse(){
  const s=useGame();
  return <div class="purse" aria-label="เงินในกระเป๋า">
-  <span title="$LM (สกุลเงินหลัก)"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="#e8b84a" stroke="#7a5622"/><path d="M8 4.5 9 7l2.5.2-1.9 1.6.6 2.5L8 10l-2.2 1.3.6-2.5-1.9-1.6L7 7z" fill="#fff3c4"/></svg><b>{n(s.lm)}</b></span>
+  <span title="TH (สกุลเงินหลัก)"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="#e8b84a" stroke="#7a5622"/><path d="M8 4.5 9 7l2.5.2-1.9 1.6.6 2.5L8 10l-2.2 1.3.6-2.5-1.9-1.6L7 7z" fill="#fff3c4"/></svg><b>{n(s.lm)}</b></span>
   <span title="Bone (วัตถุดิบตีบวก)"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 3a1.8 1.8 0 0 1 3 1.3L11.7 9A1.8 1.8 0 1 1 13 12a1.8 1.8 0 1 1-3 1.3L5.3 8.6A1.8 1.8 0 1 1 4 3z" fill="#e9e1cc" stroke="#6b604c"/></svg><b>{n(s.bone)}</b></span>
  </div>;
 }

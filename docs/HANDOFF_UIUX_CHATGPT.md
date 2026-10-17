@@ -1,8 +1,8 @@
-# ส่งต่องาน UI/UX — Embermarch (Thai Fantasy) → ChatGPT
+# ส่งต่องาน UI/UX — Thailnw (Thai Fantasy) → ChatGPT
 
 > **อัปเดตเกมเพลย์ 17 ต.ค. 2026:** [GAMEPLAY_UPDATE_2026-10-17.md](GAMEPLAY_UPDATE_2026-10-17.md) เป็นกติกาล่าสุด: 1 สกิลต่ออาชีพ, cooldown อย่างเดียว, ไม่มี SP/MP, 8 ห้อง/region, บอสเรียกลูกน้อง เอกสารด้านล่างบันทึกสถานะ UI ก่อนการเปลี่ยนนี้; เมื่อทำ Phase 3 ห้ามนำ 6 สกิลหรือมานากลับมา
 
-> สร้างเมื่อ 2026-10-17 · commit ล่าสุด `cc375bf` · ใช้คู่กับไฟล์ zip `embermarch-uiux-handoff.zip`
+> สร้างเมื่อ 2026-10-17 · commit ล่าสุด `cc375bf` · ใช้คู่กับไฟล์ zip `thailnw-uiux-handoff.zip`
 > ผู้รับงานไม่เห็นบทสนทนาเดิม เอกสารนี้จึงต้องอ่านเข้าใจได้ด้วยตัวเอง
 
 ---
@@ -10,7 +10,7 @@
 ## 0. Prompt สำหรับวางใน ChatGPT (คัดลอกทั้งบล็อก)
 
 ```
-คุณคือ UI/UX Game Designer และ Lead Frontend Developer ที่รับช่วงต่อโปรเจกต์เกม "Embermarch"
+คุณคือ UI/UX Game Designer และ Lead Frontend Developer ที่รับช่วงต่อโปรเจกต์เกม "Thailnw"
 (idle dungeon crawler แนว Thai Fantasy MMORPG, TypeScript + Vite + Phaser 3 + Preact)
 
 ไฟล์ที่แนบมาเป็น source code ทั้งหมดของ src/, tests/, docs/ และภาพอ้างอิงงานศิลป์ 2 ภาพ
@@ -33,7 +33,7 @@
 | --- | --- |
 | เกม | idle dungeon crawler เล่นในเบราว์เซอร์ ต่อสู้อัตโนมัติ มี 5 อาชีพ · 1 สกิล/อาชีพ · 11 region/floor · 8 ห้อง/region (ห้อง 8 คือบอส) |
 | Stack | TypeScript 5.9 strict · Vite 7 · Phaser 3.90 (ฉาก) · **Preact 10 + @preact/signals** (HUD ใหม่) · Vitest 3 · pnpm |
-| เซฟ | LocalStorage key `embermarch.save.v1` · **รูปแบบเวอร์ชัน 5** · มี migration v1→v5 และสำรองเซฟเดิมก่อน migrate |
+| เซฟ | LocalStorage key `thailnw.save.v1` · **รูปแบบเวอร์ชัน 5** · มี migration v1→v5 และสำรองเซฟเดิมก่อน migrate |
 | ทิศทาง | กำลังจะเปลี่ยนเป็นเกมออนไลน์ (ดู `docs/ONLINE_PLAN.md`) **ไม่มี NFT/token/wallet** · ตอนนี้ยังเป็น local ทั้งหมด |
 | Test | `pnpm test` → **97 tests ผ่าน** · `pnpm build` ผ่าน |
 | ภาพอ้างอิง | `references/shattered-siam.webp` (pixel โทนมืด ไม้+ทอง) และ `references/siam-spirit.webp` (chibi สว่าง) · **ใช้เป็นทิศทางเท่านั้น ห้ามคัดลอกภาพ/asset** |
@@ -62,10 +62,10 @@ CombatEngine (src/core)  ──tick/dispatch──▶  Store.notify(state, event
 - **การอ่าน state:** `useGame()` ใน `gameSignal.ts` · state เป็น object เดียวที่ถูกแก้ในที่เดิม จึงใช้ signal `revision` ตัวนับเพื่อ re-render (ทุกประมาณ 100 ms)
 - **การสั่งงาน:** `currentStore().dispatch(command)` ครอบด้วย try/catch แล้วโชว์ error ผ่าน `toast` · core โยน Error พร้อมข้อความเมื่อคำสั่งไม่ถูกต้อง
 - **Event stream:** `feed` (ข้อความระบบสำหรับกล่องแชต) และ `lastCast` (แฟลช hotbar) อยู่ใน `gameSignal.ts`
-- **ค่าตั้ง UI ต่อเครื่อง:** `prefs.ts` (localStorage `embermarch.ui.v1`): `scale` 0.9–1.25, `muted`, `trackerOpen`, `chatOpen`, `damageNumbers` (all/important/off), `shake` · บนมือถือ chat กับ tracker เปิดได้ทีละอัน
+- **ค่าตั้ง UI ต่อเครื่อง:** `prefs.ts` (localStorage `thailnw.ui.v1`): `scale` 0.9–1.25, `muted`, `trackerOpen`, `chatOpen`, `damageNumbers` (all/important/off), `shake` · บนมือถือ chat กับ tracker เปิดได้ทีละอัน
 - **ปุ่มลัด:** `src/ui/keybinds.ts` (ตารางเดียว + บันทึก**เฉพาะค่าที่ผู้เล่นเปลี่ยน**) + `hud/hotkeys.ts` (ตัวรับ keydown ตัวเดียวของทั้งเกม) + `hud/KeybindsDialog.tsx`
 - **Modal เดิม** (กระเป๋า, ตัวละคร, สัตว์เลี้ยง, ร้าน, แผนที่, เควส, AFK, เลือกอาชีพ) ยังเป็น HTML string ใน `src/ui/UIManager.ts` ผ่าน `<dialog id="modal">` · **Phase 3 คือย้ายทีละหน้าต่างมาเป็น Preact**
-- **ฉาก Phaser:** `src/game/scenes/CatacombScene.ts` วาดตัวละครจาก `src/game/PixelSprites.ts` (sprite string rows เขียนเอง) · ตอน dev ใช้ `window.__embermarch.scene` debug ได้
+- **ฉาก Phaser:** `src/game/scenes/CatacombScene.ts` วาดตัวละครจาก `src/game/PixelSprites.ts` (sprite string rows เขียนเอง) · ตอน dev ใช้ `window.__thailnw.scene` debug ได้
 
 ### ไฟล์ UI ที่สำคัญ
 
@@ -109,7 +109,7 @@ CombatEngine (src/core)  ──tick/dispatch──▶  Store.notify(state, event
 ## 4. Core API ที่ UI ใช้
 
 **State (`GameState` ใน `src/core/models.ts`)** — ฟิลด์ที่ UI ใช้บ่อย:
-`hero{name,class,level,xp,hp,points,attributes}` · `lm` (สกุลเงิน · จะเปลี่ยนชื่อเป็น Gold ในเฟส P0) · `bone` · `inventory: Item[]` (สูงสุด 300) · `chest` (สูงสุด 150) · `equipped: {slot→itemId}` · `floor region room unlocked cleared` · `enemies: Enemy[]` · `target` (0 = อัตโนมัติ) · `cooldowns` / `autoCast` (ต่อ id สกิล) · `shrine` · `pets` / `pet` · `shield` · `kills` / `bosses` · `questClaims` · `afk` · `log` · `respawnAt` / `nextRoomAt` / `travelAt` · `autoAdvance`
+`hero{name,class,level,xp,hp,points,attributes}` · `lm` (สกุลเงิน TH · ชื่อฟิลด์ยังเป็น lm) · `bone` · `inventory: Item[]` (สูงสุด 300) · `chest` (สูงสุด 150) · `equipped: {slot→itemId}` · `floor region room unlocked cleared` · `enemies: Enemy[]` · `target` (0 = อัตโนมัติ) · `cooldowns` / `autoCast` (ต่อ id สกิล) · `shrine` · `pets` / `pet` · `shield` · `kills` / `bosses` · `questClaims` · `afk` · `log` · `respawnAt` / `nextRoomAt` / `travelAt` · `autoAdvance`
 
 **Command** (`store.dispatch`):
 `class{value,name?}` · `name{value}` · `allocate{value}` · `equip|forge|salvage|lock{id}` · `claim` · `best` · `seal` · `advance` · `afk` · `pet{value}` · `feed{amount}` · `travel{region}` · `quest{id}` · `buy{offer:'potion'|'cache'}` · `cast{id}` · `autocast{id,value}` · `target{id}`
@@ -174,7 +174,7 @@ CombatEngine (src/core)  ──tick/dispatch──▶  Store.notify(state, event
 | U2 | จำนวนอาชีพ (ภาพอ้างอิงมี 3/4 แต่เกมมี 5) | ตอนนี้คงไว้ 5 |
 | U4 | MP จริง (สกิลใช้ MP) | **ยกเลิกตามคำขอ 17 ต.ค. 2026: ใช้ cooldown อย่างเดียว** |
 | U5 | ชื่อ 11 region เป็นภาษาไทยแฟนตาซี | ยังไม่ตั้ง |
-| D1 | เปลี่ยน `$LM` → Gold | ยังไม่ทำ (P0 ใน ONLINE_PLAN) · UI ยังแสดง $LM |
+| D1 | เปลี่ยน `TH` → Gold | ยังไม่ทำ (P0 ใน ONLINE_PLAN) · UI ยังแสดง TH |
 | — | Balance v2 | sim ล่าสุด: Sword ตายบ่อยขึ้น, Axe แซงคลาสอื่น · ยังไม่จูน (ไม่ใช่งาน UI) |
 
 ---
