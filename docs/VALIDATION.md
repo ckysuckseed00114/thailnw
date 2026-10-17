@@ -1,5 +1,7 @@
 # Verification — 2026-10-16
 
+> ผลตรวจล่าสุด (17 ต.ค. 2026): TypeScript และ Vite build ผ่าน; Vitest 97/97 ผ่านใน 8 ไฟล์ ดู [CURRENT_STRUCTURE_TH.md](CURRENT_STRUCTURE_TH.md) รายการด้านล่างเป็นบันทึกการตรวจรุ่นก่อน
+
 - Strict TypeScript check: passed.
 - Vite production build: passed. Phaser is isolated in its own approximately 1.2 MB raw / 332 KB gzip chunk; Vite reports the expected large-chunk advisory.
 - Vitest: 25 passing tests covering base stats, XP, scaling, caps, all five classes, deterministic tick chunking, respawn/item retention, attribute validation, forge costs, salvage refund, gear protection, Equip Best, chest idempotency, travel restrictions, seals, feeding, quest claims, level-up heal, one-hour simulated session, offline caps/rates/history/idempotency, and save validation.

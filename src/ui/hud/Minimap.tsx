@@ -3,7 +3,7 @@ import {traversalProgress} from '../../core/RoomTraversal';
 import {useGame} from './gameSignal';
 
 // Room nodes along a winding path inside the 100×100 map disc; the last node is the warden.
-const NODES:[number,number][]=[[20,64],[35,40],[51,58],[66,35],[80,55]];
+const NODES:[number,number][]=[[16,67],[24,44],[36,59],[46,32],[56,57],[68,39],[77,61],[85,42]];
 const pad=(n:number)=>String(n).padStart(2,'0');
 export function Minimap({onOpenMap}:{onOpenMap:()=>void}){
  const s=useGame();const i=s.room-1;

@@ -4,7 +4,7 @@ import {drop,random} from './DropTable';
 import type {Authority} from './GameState';
 import {ROOM_TRAVERSE_MS} from './RoomTraversal';
 import {focusEnemy} from './Targeting';
-import {AUTO_HEAL_BELOW,findSkill,isAuto,isUnlocked,primarySkill,readyAt,skillsFor,type SkillDef} from './Skills';
+import {findSkill,isAuto,isUnlocked,primarySkill,readyAt,skillsFor,type SkillDef} from './Skills';
 
 export const QUESTS=[{id:'first',name:'A light in the dark',description:'Defeat 10 monsters',target:10,metric:'kills',lm:100,bone:60},{id:'warden',name:'Break the watch',description:'Defeat 3 bosses',target:3,metric:'bosses',lm:300,bone:200},{id:'veteran',name:'The long descent',description:'Defeat 100 monsters',target:100,metric:'kills',lm:800,bone:400}] as const;
 export class CombatEngine implements Authority {
@@ -17,30 +17,32 @@ export class CombatEngine implements Authority {
  private record(reward:Reward,seconds=0){const s=this.state;const minute=Math.floor(s.now/60000)*60000;let h=s.history.find(h=>h.at===minute);if(!h){h={at:minute,seconds:0,lm:0,xp:0,bone:0,loot:0};s.history.push(h);}h.seconds+=seconds;for(const k of ['lm','xp','bone','loot'] as const)h[k]+=reward[k];s.history=s.history.filter(h=>h.at>=s.now-86400000);}
  private spawn(){
   const s=this.state;const boss=s.room===ROOMS;const m=monsterStats(regionIndex(s),boss);
-  s.enemies=Array.from({length:boss?1:3},(_,i)=>({id:++s.serial,name:boss?'The Hollow Warden':['Mossling','Crypt Sentinel','Cave Stalker'][i],hp:m.hp,maxHp:m.hp,damage:m.damage,boss,attackAt:s.now+1800+i*400,stunnedUntil:0,attacks:0}));
+  s.enemies=Array.from({length:boss?1:3},(_,i)=>({id:++s.serial,name:boss?'The Hollow Warden':['Mossling','Crypt Sentinel','Cave Stalker'][i],hp:m.hp,maxHp:m.hp,damage:m.damage,boss,attackAt:s.now+1800+i*400,stunnedUntil:0,attacks:0,summons:0}));
   s.nextRoomAt=0;s.attackAt=s.now+400;s.target=0;
   if(random(s)<.08){const kinds:Shrine[]=['Fury','Fortune','Haste','Renewal'];s.shrine={kind:kinds[Math.floor(random(s)*4)],until:s.now+60000};this.note(`${s.shrine.kind} shrine · blessed for 60 seconds.`);}
   this.events.push({type:'room',target:0});
  }
  private strike(ids:number[],mult:number,from?:{skill:SkillDef;stunMs?:number}){
   const s=this.state;const st=stats(s);
-  for(const id of ids){const e=s.enemies.find(e=>e.id===id&&e.hp>0);if(!e)continue;const critical=random(s)<st.crit;const damage=Math.round(st.damage*mult*(critical?st.critMult:1));const dealt=Math.min(e.hp,damage);e.hp=Math.max(0,e.hp-damage);s.hero.hp=Math.min(st.maxHp,s.hero.hp+dealt*st.lifeSteal);if(from?.stunMs)e.stunnedUntil=Math.max(e.stunnedUntil,s.now+from.stunMs);this.events.push({type:'hit',target:id,amount:damage,critical,...(from?{skill:from.skill.id,element:from.skill.element}:{})});}
+  for(const id of ids){const e=s.enemies.find(e=>e.id===id&&e.hp>0);if(!e)continue;const critical=random(s)<st.crit;const damage=Math.round(st.damage*mult*(critical?st.critMult:1));const dealt=Math.min(e.hp,damage);e.hp=Math.max(0,e.hp-damage);s.hero.hp=Math.min(st.maxHp,s.hero.hp+dealt*st.lifeSteal);if(from?.stunMs)e.stunnedUntil=Math.max(e.stunnedUntil,s.now+from.stunMs);this.events.push({type:'hit',target:id,amount:damage,critical,...(from?{skill:from.skill.id,element:from.skill.element}:{})});if(e.boss&&e.hp>0)this.summon(e);}
  }
- /** Whether casting now would do anything (no target, full HP or an active shield make a cast pointless). */
- private castable(k:SkillDef,auto:boolean){
-  const s=this.state;const e=k.effect;
-  if(e.kind==='strike')return s.enemies.some(m=>m.hp>0);
-  if(e.kind==='heal')return s.hero.hp<stats(s).maxHp*(auto?AUTO_HEAL_BELOW:1);
-  return !s.shield;
+ /** Each health threshold calls one guard. Boss keeps attacking while guards are alive. */
+ private summon(boss:GameState['enemies'][number]){
+  const s=this.state,ratio=boss.hp/boss.maxHp;
+  while(boss.summons<2&&ratio<=(2-boss.summons)/3){
+   boss.summons++;
+   const base=monsterStats(regionIndex(s),false),hp=Math.round(base.hp*1.25);
+   const guard={id:++s.serial,name:"Warden's Guard",hp,maxHp:hp,damage:base.damage*1.15,boss:false,attackAt:s.now+1200,stunnedUntil:0,attacks:0,summons:0};
+   s.enemies.push(guard);this.events.push({type:'summon',target:guard.id,label:`Phase ${boss.summons+1} · Warden's Guard`});
+   this.note(`The Warden calls a guard in phase ${boss.summons+1}!`);
+  }
  }
  /** Only called while enemies exist (step returns early otherwise). */
  private focus(){return focusEnemy(this.state)!;}
  private cast(k:SkillDef){
   const s=this.state;const e=k.effect;const f=this.focus();const alive=s.enemies.filter(m=>m.hp>0).sort((a,b)=>Number(b===f)-Number(a===f));
   this.events.push({type:'skill',target:alive[0]?.id??0,label:k.name,skill:k.id,element:k.element});
-  if(e.kind==='strike')this.strike((e.target==='all'?alive:alive.slice(0,1)).map(m=>m.id),e.mult,{skill:k,stunMs:e.stunMs});
-  else if(e.kind==='heal'){const max=stats(s).maxHp;s.hero.hp=Math.min(max,s.hero.hp+max*e.pct);}
-  else s.shield=true;
+  this.strike((e.target==='all'?alive:alive.slice(0,1)).map(m=>m.id),e.mult,{skill:k,stunMs:e.stunMs});
   s.cooldowns[k.id]=s.now+k.cooldown;
  }
  private kills(){
@@ -51,10 +53,13 @@ export class CombatEngine implements Authority {
    const reward={lm:(e.boss?45:8)*r*fortune,xp:(e.boss?100:18)*r,bone:(e.boss?15:3)*r,loot:0};
    if(e.boss||random(s)<.24){for(let i=0;i<fortune;i++){this.stash(drop(s,r));reward.loot++;}}
    s.lm+=reward.lm;s.bone+=reward.bone;this.awardXP(reward.xp);this.record(reward);
-   if(e.boss){s.cleared=Math.max(s.cleared,r);s.unlocked=Math.max(s.unlocked,Math.min(s.floor*11,r+1));this.note(`Warden defeated. +${reward.lm} $LM · +${reward.xp} XP`);}
+   if(e.boss)this.note(`Warden defeated. Clear the guards to open the gate. +${reward.lm} $LM · +${reward.xp} XP`);
   }
   s.enemies=s.enemies.filter(e=>e.hp>0);if(s.target&&!s.enemies.some(e=>e.id===s.target))s.target=0;
-  if(!s.enemies.length&&!s.nextRoomAt)s.nextRoomAt=s.now+ROOM_TRAVERSE_MS;
+  if(!s.enemies.length&&!s.nextRoomAt){
+   if(s.room===ROOMS){const r=regionIndex(s);s.cleared=Math.max(s.cleared,r);s.unlocked=Math.max(s.unlocked,Math.min(s.floor*11,r+1));this.note('The Warden and guards are defeated. The gate opens.');}
+   s.nextRoomAt=s.now+ROOM_TRAVERSE_MS;
+  }
  }
  tick(ms:number){
   // Events raised by dispatch() since the last tick (e.g. a manual cast) are delivered with this tick's events.
@@ -71,17 +76,18 @@ export class CombatEngine implements Authority {
   if(s.shrine?.kind==='Renewal')s.hero.hp=Math.min(stats(s).maxHp,s.hero.hp+stats(s).maxHp*.03*dt/1000);
   if(!s.enemies.length){if(!s.nextRoomAt)this.spawn();else if(s.now>=s.nextRoomAt){if(s.room===ROOMS){s.room=1;if(s.autoAdvance&&s.region<11)s.region++;}else s.room++;this.spawn();}return;}
   if(s.now>=s.attackAt){this.strike([this.focus().id],1);s.attackAt=s.now+stats(s).interval;}
-  for(const k of skillsFor(s))if(isUnlocked(s,k)&&isAuto(s,k)&&s.now>=readyAt(s,k)&&this.castable(k,true))this.cast(k);
+  for(const k of skillsFor(s))if(isUnlocked(s,k)&&isAuto(s,k)&&s.now>=readyAt(s,k)&&s.enemies.some(m=>m.hp>0))this.cast(k);
   if(s.now>=s.petAt){const bonus=1+(s.pets[s.pet].level-1)*.1;const st=stats(s);if(s.pet==='Leafhopper')s.hero.hp=Math.min(st.maxHp,s.hero.hp+st.maxHp*.1*bonus);else if(s.pet==='Shellby')s.shield=true;else{const f=this.focus();this.strike([f.id],(s.pet==='Craboulder'?.9:1.2)*bonus);if(s.pet==='Craboulder')f.stunnedUntil=s.now+1000*bonus;}this.events.push({type:'pet',target:0,label:s.pet});s.petAt=s.now+8000/(s.pet==='Shellby'?bonus:1);}
   this.kills();
   for(const e of s.enemies){
    if(s.now<e.attackAt||s.now<e.stunnedUntil)continue;
    e.attacks++;const slam=e.boss&&e.attacks%3===0;const st=stats(s);
-   // Same short-circuit order (and RNG draws) as before; only the reason is now reported.
-   const dodged=slam&&random(s)<st.dodge,shielded=!dodged&&s.shield,blocked=!dodged&&!shielded&&random(s)<st.block,avoided=dodged||shielded||blocked;
-   if(s.shield)s.shield=false;
+   // Basic attacks can be sidestepped too; slam retains its higher dodge chance.
+   const dodgeChance=slam?st.dodge:Math.min(.35,.12+s.hero.attributes.Agility*.005);
+   const dodged=random(s)<dodgeChance,shielded=!dodged&&s.shield,blocked=!dodged&&!shielded&&random(s)<st.block,avoided=dodged||shielded||blocked;
+   if(shielded)s.shield=false;
    const amount=avoided?0:Math.round(e.damage*(slam?2.5:1));s.hero.hp=Math.max(0,s.hero.hp-amount);e.attackAt=s.now+(e.boss?2200:2400);
-   this.events.push({type:'hit',target:0,amount,label:dodged?'DODGE':shielded?'SHIELD':blocked?'BLOCK':slam?'SLAM':undefined});
+   this.events.push({type:'hit',target:0,source:e.id,amount,label:dodged?'DODGE':shielded?'SHIELD':blocked?'BLOCK':slam?'SLAM':undefined});
    if(s.hero.hp<=0){s.respawnAt=s.now+3000;s.enemies=[];s.nextRoomAt=0;this.events.push({type:'death',target:0});this.note('Fallen, but not forgotten. Returning in 3 seconds.');break;}
   }
  }
@@ -98,7 +104,7 @@ export class CombatEngine implements Authority {
    if(c.type==='autocast'){check(typeof c.value==='boolean','Invalid auto-cast setting.');s.autoCast[k.id]=c.value;return;}
    check(isUnlocked(s,k),`${k.name} unlocks at level ${k.unlock}.`);check(!s.respawnAt,'Wait until you respawn.');
    check(s.now>=readyAt(s,k),`${k.name} is cooling down.`);
-   check(this.castable(k,false),k.effect.kind==='strike'?'No target in range.':k.effect.kind==='heal'?'Your health is already full.':'Your shield is already up.');
+   check(s.enemies.some(m=>m.hp>0),'No target in range.');
    this.cast(k);return;
   }
   if(c.type==='allocate'){check(ATTRIBUTES.includes(c.value)&&s.hero.points>0,'No attribute points available.');check(c.value!=='Vampirism'||s.hero.attributes.Vampirism<20,'Vampirism is capped at 20.');s.hero.points--;s.hero.attributes[c.value]++;}

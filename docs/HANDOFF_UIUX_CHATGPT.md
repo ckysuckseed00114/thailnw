@@ -1,5 +1,7 @@
 # ส่งต่องาน UI/UX — Embermarch (Thai Fantasy) → ChatGPT
 
+> **อัปเดตเกมเพลย์ 17 ต.ค. 2026:** [GAMEPLAY_UPDATE_2026-10-17.md](GAMEPLAY_UPDATE_2026-10-17.md) เป็นกติกาล่าสุด: 1 สกิลต่ออาชีพ, cooldown อย่างเดียว, ไม่มี SP/MP, 8 ห้อง/region, บอสเรียกลูกน้อง เอกสารด้านล่างบันทึกสถานะ UI ก่อนการเปลี่ยนนี้; เมื่อทำ Phase 3 ห้ามนำ 6 สกิลหรือมานากลับมา
+
 > สร้างเมื่อ 2026-10-17 · commit ล่าสุด `cc375bf` · ใช้คู่กับไฟล์ zip `embermarch-uiux-handoff.zip`
 > ผู้รับงานไม่เห็นบทสนทนาเดิม เอกสารนี้จึงต้องอ่านเข้าใจได้ด้วยตัวเอง
 
@@ -29,11 +31,11 @@
 
 | หัวข้อ | สถานะ |
 | --- | --- |
-| เกม | idle dungeon crawler เล่นในเบราว์เซอร์ ต่อสู้อัตโนมัติ มี 5 อาชีพ (Sword, Spear, Wand, Axe, Dagger) · 11 region/floor · 5 ห้อง/region (ห้อง 5 คือบอส) |
+| เกม | idle dungeon crawler เล่นในเบราว์เซอร์ ต่อสู้อัตโนมัติ มี 5 อาชีพ · 1 สกิล/อาชีพ · 11 region/floor · 8 ห้อง/region (ห้อง 8 คือบอส) |
 | Stack | TypeScript 5.9 strict · Vite 7 · Phaser 3.90 (ฉาก) · **Preact 10 + @preact/signals** (HUD ใหม่) · Vitest 3 · pnpm |
-| เซฟ | LocalStorage key `embermarch.save.v1` · **รูปแบบเวอร์ชัน 4** · มี migration v1→v4 และสำรองเซฟเดิมก่อน migrate |
+| เซฟ | LocalStorage key `embermarch.save.v1` · **รูปแบบเวอร์ชัน 5** · มี migration v1→v5 และสำรองเซฟเดิมก่อน migrate |
 | ทิศทาง | กำลังจะเปลี่ยนเป็นเกมออนไลน์ (ดู `docs/ONLINE_PLAN.md`) **ไม่มี NFT/token/wallet** · ตอนนี้ยังเป็น local ทั้งหมด |
-| Test | `pnpm test` → **101 tests ผ่าน** · `pnpm build` ผ่าน (JS app 125 KB / 47 KB gzip + Phaser 1.2 MB) |
+| Test | `pnpm test` → **97 tests ผ่าน** · `pnpm build` ผ่าน |
 | ภาพอ้างอิง | `references/shattered-siam.webp` (pixel โทนมืด ไม้+ทอง) และ `references/siam-spirit.webp` (chibi สว่าง) · **ใช้เป็นทิศทางเท่านั้น ห้ามคัดลอกภาพ/asset** |
 
 คำสั่ง:
@@ -71,14 +73,14 @@ CombatEngine (src/core)  ──tick/dispatch──▶  Store.notify(state, event
 | --- | --- |
 | `src/ui/theme/tokens.css` | design tokens `--tf-*` + คลาส `.tf-frame .tf-bar .tf-plate .tf-key .tf-title .tf-ornate` |
 | `src/ui/theme/elements.ts` | สีตามธาตุสกิล (holy, lightning, arcane, earth, shadow, nature, spirit) |
-| `src/ui/components/Frame.tsx` | `Frame` (กรอบไม้/หมึก + มุมลายกนก SVG ต้นฉบับ), `Bar` (HP/SP/XP) |
+| `src/ui/components/Frame.tsx` | `Frame` (กรอบไม้/หมึก + มุมลายกนก SVG ต้นฉบับ), `Bar` (HP/XP) |
 | `src/ui/hud/hud.css` | layout grid + breakpoint (≤1279, ≤1100, ≤1023, ≤760) + style ของ HUD ทั้งหมด |
-| `src/ui/hud/PlayerFrame.tsx` | รูป ชื่อ Lv HP / **SP (= ชาร์จสกิลช่อง 1 ไม่ใช่ MP)** / XP / buff |
+| `src/ui/hud/PlayerFrame.tsx` | รูป ชื่อ Lv HP / XP / buff (ไม่มีมานาหรือ SP) |
 | `src/ui/hud/TopBar.tsx` | ป้ายชื่อพื้นที่ + QuickSettings (ขนาด UI, เสียง, ตัวเลขดาเมจ, สั่นจอ, เต็มจอ, ปุ่มลัด) + `Purse` |
-| `src/ui/hud/Minimap.tsx` | มินิแมพวงกลม (SVG): ห้อง 1–5, ตำแหน่งตอนเดิน, นาฬิกา, ปุ่ม M |
+| `src/ui/hud/Minimap.tsx` | มินิแมพวงกลม (SVG): ห้อง 1–8, ตำแหน่งตอนเดิน, นาฬิกา, ปุ่ม M |
 | `src/ui/hud/QuestTracker.tsx` | เป้าหมายห้อง + เควสหลักที่ยังไม่รับรางวัล (`trackedItems()` มี test) |
-| `src/ui/hud/Hotbar.tsx` | สกิล 1–5 + R, วงคูลดาวน์, auto toggle, ปุ่มเดินหน้าอัตโนมัติ |
-| `src/ui/hud/Targets.tsx` | `TargetFrame` + `BossBar` (ระยะ 66/33% ใช้แสดงผลเท่านั้น + ตัวนับทุบหนัก) |
+| `src/ui/hud/Hotbar.tsx` | สกิลเดียวปุ่ม 1, วงคูลดาวน์, auto toggle, ปุ่มเดินหน้าอัตโนมัติ |
+| `src/ui/hud/Targets.tsx` | `TargetFrame` + `BossBar` (ระยะ 66/33% เรียกลูกน้องจริง + ตัวนับทุบหนัก) |
 | `src/ui/hud/ChatBox.tsx` | แท็บ ทั้งหมด/ทั่วไป/ระบบ/กระซิบ (ตอนนี้มีแค่ "ระบบ") |
 | `src/ui/design/DesignDemo.tsx` + `design.html` | หน้า design system (dev เท่านั้น) |
 | `src/ui/UIManager.ts` | modal เดิม + เมนูล่าง (`nav`) + toast + แบนเนอร์บอส |
@@ -128,12 +130,12 @@ CombatEngine (src/core)  ──tick/dispatch──▶  Store.notify(state, event
 | รหัส | สิ่งที่ได้ |
 | --- | --- |
 | 1.1 | ติดตั้ง Preact, design tokens, ฟอนต์ไทย (Kanit, Sarabun, Srisakdi) + Silkscreen สำหรับตัวเลข, `Frame`/`Bar`, หน้า `/design.html` |
-| 1.2 | Player frame (SP = ชาร์จสกิล รอการตัดสินใจเรื่อง MP) |
+| 1.2 | Player frame (HP/XP; ตัด SP/MP แล้ว) |
 | 1.3 | มินิแมพวงกลม + ปุ่ม M เปิดแผนที่โลก |
 | 1.4 | Quest tracker ย่อได้ คลิกแล้วเปิดสมุดภารกิจ |
 | 1.5 | Top bar + ตั้งค่าด่วน + Purse |
 | 1.6 | Grid + safe area + UI scale 90–125% |
-| 2.1 | **ระบบสกิล 6 ช่อง/คลาสใน core** (save v3) + Hotbar |
+| 2.1 | **ระบบสกิลเดียว/คลาสใน core** (save v5) + Hotbar |
 | 2.2 | ตัวเลขดาเมจ v2 (สีตามธาตุ, หลบ/กัน/โล่, ตั้งค่า, จำกัดจำนวน, ซ้อนไม่ทับ) |
 | 2.3 | **เลือกเป้าหมายใน core** (save v4) + Target frame + Boss bar + ป้ายชื่อศัตรู + คลิกศัตรูเพื่อเลือก |
 | 2.4 | Hit flash, knockback, สั่นจอ, VFX ตามธาตุ |
@@ -170,7 +172,7 @@ CombatEngine (src/core)  ──tick/dispatch──▶  Store.notify(state, event
 | # | เรื่อง | สถานะ |
 | --- | --- | --- |
 | U2 | จำนวนอาชีพ (ภาพอ้างอิงมี 3/4 แต่เกมมี 5) | ตอนนี้คงไว้ 5 |
-| U4 | MP จริง (สกิลใช้ MP) | ยังไม่ทำ · ใช้ SP แทน |
+| U4 | MP จริง (สกิลใช้ MP) | **ยกเลิกตามคำขอ 17 ต.ค. 2026: ใช้ cooldown อย่างเดียว** |
 | U5 | ชื่อ 11 region เป็นภาษาไทยแฟนตาซี | ยังไม่ตั้ง |
 | D1 | เปลี่ยน `$LM` → Gold | ยังไม่ทำ (P0 ใน ONLINE_PLAN) · UI ยังแสดง $LM |
 | — | Balance v2 | sim ล่าสุด: Sword ตายบ่อยขึ้น, Axe แซงคลาสอื่น · ยังไม่จูน (ไม่ใช่งาน UI) |

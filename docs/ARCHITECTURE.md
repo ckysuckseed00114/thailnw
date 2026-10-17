@@ -1,5 +1,7 @@
 # Embermarch architecture
 
+> โครงสร้าง UI และผลตรวจล่าสุด (17 ต.ค. 2026): [CURRENT_STRUCTURE_TH.md](CURRENT_STRUCTURE_TH.md) เอกสารนี้เน้นกฎเกมและขอบเขตระบบ; HUD ปัจจุบันใช้ Preact ร่วมกับ `UIManager` เดิม และรูปแบบเซฟเป็น v5
+
 ## Boundaries
 
 `src/core` imports no DOM or Phaser APIs. `CombatEngine` is the local implementation of the `Authority` interface; it accepts validated commands and emits combat events. `Store` publishes state and events to the HTML UI and Phaser scene. `src/game/scenes/CatacombScene` draws state and never decides damage, loot, progression, or currency. Its movement, weapon swings and companion follow behavior are presentation animations. `SaveRepository` isolates persistence; the supplied implementation uses LocalStorage with version and structural validation. An invalid save is preserved and startup is stopped rather than silently replacing progress.
@@ -19,6 +21,8 @@ HTML input → Store.dispatch → Authority / CombatEngine
 ## Requested formulas
 
 - Base: 100 HP, 14 damage, 600ms interval, 10% crit ×1.8, 12% block, 30% boss-slam dodge (50% cap).
+- Basic enemy hits now have 12% dodge plus 0.5 percentage points per Agility (35% cap). Boss slam keeps 30% plus 1 percentage point per Agility (50% cap). A successful dodge emits `DODGE`; Phaser shows a backstep. A shield is consumed only when it actually blocks a hit.
+- Exactly one class skill exists per hero, on key `1`, with a seven-second cooldown and optional auto-cast. There is no mana, SP, MP, or energy resource.
 - Attributes: Strength +2 damage; Vitality +8 HP; Agility +2 speed and +1% dodge; Defense +1% block; Vampirism +0.25% life steal, 20-point cap.
 - Speed is interpreted as percentage attack speed: `600 / (1 + speed/100)` milliseconds. Haste divides the interval by 1.5. Block has an additional balance cap at 85%.
 - XP is the cost of the next level: level 2 costs 250; level L≥3 costs `round(1000 × 1.16^(L−2))`. Level-up fully heals and grants one point. A technical level ceiling of 1000 guards malformed/infinite progression.
@@ -32,7 +36,8 @@ HTML input → Store.dispatch → Authority / CombatEngine
 
 | System | Initial implementation |
 | --- | --- |
-| Rooms per region | Four encounters with three enemies each, then a boss |
+| Rooms per region | Seven encounters with three enemies each, then a boss in room 8 |
+| Boss phases | At ≤2/3 and ≤1/3 HP, summon one guard per threshold; boss remains targetable and attacks on its normal 2.2s schedule while guards are alive; all enemies must die before the gate opens |
 | Base enemies | 42 HP / 3 damage; boss 170 HP / 10 damage |
 | Enemy timing | 2.4s attacks; boss 2.2s; every third boss hit is a 2.5× slam |
 | Room transition | 6.5s walk through the opened door (`ROOM_TRAVERSE_MS`); death respawns after 3s in current region room 1 |

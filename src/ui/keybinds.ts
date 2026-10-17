@@ -2,14 +2,13 @@ import {effect,signal} from '@preact/signals';
 
 // Remappable keyboard shortcuts (UI_UX_PLAN 2.5). One table drives the hotbar, targeting and window hotkeys.
 export const ACTIONS=[
- {id:'skill:0',group:'สกิล',label:'สกิลช่อง 1'},{id:'skill:1',group:'สกิล',label:'สกิลช่อง 2'},{id:'skill:2',group:'สกิล',label:'สกิลช่อง 3'},
- {id:'skill:3',group:'สกิล',label:'สกิลช่อง 4'},{id:'skill:4',group:'สกิล',label:'สกิลช่อง 5'},{id:'skill:5',group:'สกิล',label:'สกิลพิเศษ (R)'},
+ {id:'skill:0',group:'สกิล',label:'สกิลประจำอาชีพ'},
  {id:'target:next',group:'เป้าหมาย',label:'เลือกเป้าหมายถัดไป'},{id:'target:clear',group:'เป้าหมาย',label:'กลับไปเลือกอัตโนมัติ'},
  {id:'panel:inventory',group:'หน้าต่าง',label:'กระเป๋า'},{id:'panel:stats',group:'หน้าต่าง',label:'ตัวละคร'},{id:'panel:pet',group:'หน้าต่าง',label:'สัตว์เลี้ยง'},
  {id:'panel:shop',group:'หน้าต่าง',label:'ร้านค้า'},{id:'panel:travel',group:'หน้าต่าง',label:'แผนที่โลก'},{id:'panel:quests',group:'หน้าต่าง',label:'ภารกิจ'},
 ] as const;
 export type Action=typeof ACTIONS[number]['id'];
-export const DEFAULT_KEYS:Record<Action,string>={'skill:0':'1','skill:1':'2','skill:2':'3','skill:3':'4','skill:4':'5','skill:5':'R','target:next':'T','target:clear':'X',
+export const DEFAULT_KEYS:Record<Action,string>={'skill:0':'1','target:next':'T','target:clear':'X',
  'panel:inventory':'I','panel:stats':'C','panel:pet':'P','panel:shop':'B','panel:travel':'M','panel:quests':'Q'};
 /** Keys that keep their browser/dialog meaning and can't be bound. */
 const RESERVED=new Set(['Escape','Enter','Shift','Control','Alt','Meta','AltGraph','CapsLock','NumLock','ScrollLock','Dead','Unidentified','Process','ContextMenu','OS']);

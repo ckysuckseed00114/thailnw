@@ -10,7 +10,7 @@ export function Frame({children,tone='wood',ornate=true,class:className='',...re
   {children}
  </div>;
 }
-export function Bar({kind,value,max,label}:{kind:'hp'|'sp'|'xp';value:number;max:number;label?:string}){
+export function Bar({kind,value,max,label}:{kind:'hp'|'xp';value:number;max:number;label?:string}){
  const pct=max>0?Math.max(0,Math.min(100,value/max*100)):0;
  return <div class={`tf-bar ${kind}`} role="meter" aria-label={label??kind.toUpperCase()} aria-valuemin={0} aria-valuemax={Math.round(max)} aria-valuenow={Math.round(value)}>
   <i style={{width:`${pct}%`}}/>{kind!=='xp'&&<b>{Math.floor(value).toLocaleString()} / {Math.floor(max).toLocaleString()}</b>}

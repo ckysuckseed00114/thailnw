@@ -157,10 +157,21 @@ export class CatacombScene extends Phaser.Scene {
  /** Hit feedback (2.4): white flash and knockback on enemies, red flash on the hero, light shake on crits and slams. */
  private feedback(e:GameEvent,target:Actor){
   const hurt=e.target===0;
+  if(hurt&&e.label==='DODGE')this.dodgeStep();
   if(e.amount){target.body.setTintFill(hurt?0xff5a4a:0xffffff);this.time.delayedCall(70,()=>{if(target.body.active)target.body.clearTint();});}
   if(e.amount&&!hurt&&!this.reduced){const face=target.root.x>=this.hero.root.x?1:-1;this.tweens.add({targets:target.body,x:face*(e.critical?8:4),duration:60,yoyo:true,onComplete:()=>{if(target.body.active)target.body.x=0;}});}
   if(e.critical)this.shake(90,.003);if(e.label==='SLAM'&&e.amount)this.shake(180,.008);
   if(e.element&&!hurt)this.impactVfx(e.element as Element,target,!!e.critical);
+ }
+ /** A successful authority dodge drives a short, readable backstep; damage remains decided in core. */
+ private dodgeStep(){
+  const h=this.hero;if(this.reduced||!h.root.active)return;
+  this.tweens.killTweensOf(h.root);h.attackUntil=this.time.now+420;
+  const x=h.root.x,y=h.root.y,bodyY=h.body.y;
+  this.tweens.add({targets:h.root,x:x-72,y:y-12,duration:190,ease:'Cubic.easeOut'});
+  this.tweens.add({targets:h.body,y:bodyY-18,duration:155,yoyo:true,ease:'Sine.easeOut',onComplete:()=>{if(h.body.active)h.body.y=FEET;}});
+  const after=this.add.ellipse(x,y+FEET+1,54,16,0x8ed9ff,.42).setDepth(y-1);
+  this.fade(after,350,{scale:1.7});
  }
  /** Fades a throwaway graphic out (or just removes it under reduced motion) and destroys it. */
  private fade(g:Phaser.GameObjects.Graphics|Phaser.GameObjects.Shape|Phaser.GameObjects.Sprite,ms:number,extra:Record<string,unknown>={}){this.tweens.add({targets:g,alpha:0,duration:this.reduced?Math.min(ms,120):ms,...(this.reduced?{}:extra),onComplete:()=>g.destroy()});}
@@ -184,7 +195,7 @@ export class CatacombScene extends Phaser.Scene {
   else if(el==='shadow'){const ghost=this.add.sprite(x,y+FEET,h.body.texture.key).setOrigin(.5,1).setScale(h.body.scaleX).setFlipX(h.body.flipX).setTint(0x8a5cff).setAlpha(.45).setDepth(y-1);this.fade(ghost,360,{x:x-18*(h.body.flipX?-1:1)});}
  }
  private effect(e:GameEvent,s:GameState){
-  const target=this.actors.get(e.target);if(e.type==='hit'&&target){const attacker=e.target===0?this.actors.get(s.enemies[0]?.id):this.hero;const impact=()=>{if(!target.root.active)return;if(attacker?.root.active)this.swing(attacker,target,!!e.critical);
+  const target=this.actors.get(e.target);if(e.type==='hit'&&target){const attacker=e.target===0?this.actors.get(e.source??s.enemies[0]?.id):this.hero;const impact=()=>{if(!target.root.active)return;if(attacker?.root.active)this.swing(attacker,target,!!e.critical);
     const y=target.root.y+target.top-6,x=target.root.x+(Math.random()-.5)*16,key=e.target;
     const elem=e.element?ELEMENT_COLOR[e.element as Element]:null,boss=!!s.enemies.find(m=>m.id===e.target)?.boss;
     if(e.label==='SLAM')this.popup(x,y,e.amount?`SLAM -${e.amount}`:'SLAM','#ff6a4d','#3a0f12',18,true,key);
@@ -197,5 +208,6 @@ export class CatacombScene extends Phaser.Scene {
   }
   if(e.type==='skill'){const dest=this.actors.get(e.target)||this.hero;const tint=Number.parseInt((e.element?ELEMENT_COLOR[e.element as Element].fill:'#f1cf88').slice(1),16);const ring=this.add.circle(this.hero.root.x,this.hero.root.y+FEET,25,tint,.05).setStrokeStyle(3,tint,.85).setDepth(900);this.tweens.add({targets:ring,scale:s.hero.class==='Sword'?5:3,alpha:0,duration:500,onComplete:()=>ring.destroy()});if(s.hero.class==='Wand'){const bolt=this.add.circle(this.hero.root.x,this.hero.root.y-10,9,0xffb661).setDepth(1000);this.tweens.add({targets:bolt,x:dest.root.x,y:dest.root.y,duration:240,onComplete:()=>bolt.destroy()});}this.popup(this.hero.root.x,this.hero.root.y+this.hero.top-22,(e.label||'').toUpperCase(),'#f8d88c','#161927',15,true,-1);if(e.element)this.castVfx(e.element as Element);}
   if(e.type==='pet'){const ring=this.add.circle(this.pet.x,this.pet.y,15).setStrokeStyle(2,0xa4e2a2,.8).setDepth(950);this.tweens.add({targets:ring,scale:3,alpha:0,duration:600,onComplete:()=>ring.destroy()});}
+  if(e.type==='summon'){const a=this.actors.get(e.target);if(a){const portal=this.add.ellipse(a.root.x,a.root.y+FEET,90,28,0xd94838,.28).setStrokeStyle(3,0xff8c65,.8).setDepth(a.root.y-1);this.fade(portal,650,{scale:1.8});this.popup(a.root.x,a.root.y+a.top-34,'ผู้คุ้มกัน','#ffb28b','#401518',17,true,e.target);}}
  }
 }

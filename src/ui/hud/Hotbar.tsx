@@ -7,11 +7,9 @@ import {currentStore,lastCast,useGame} from './gameSignal';
 // Original glyphs per effect type, drawn in the element colour.
 function Glyph({k}:{k:SkillDef}){
  const e=k.effect;const c=ELEMENT_COLOR[k.element].fill;
- const d=e.kind==='heal'?'M12 4c3 3 6 5 6 9a6 6 0 0 1-12 0c0-4 3-6 6-9zm-1 6v3H8v2h3v3h2v-3h3v-2h-3v-3z'
-  :e.kind==='shield'?'M12 3 19 6v5c0 5-3 8-7 10-4-2-7-5-7-10V6z'
-  :e.target==='all'?'M12 2l2 6 6-2-4 5 5 4-6 1 1 6-4-4-4 4 1-6-6-1 5-4-4-5 6 2z'
+ const d=e.target==='all'?'M12 2l2 6 6-2-4 5 5 4-6 1 1 6-4-4-4 4 1-6-6-1 5-4-4-5 6 2z'
   :'M18 3h3v3L10 17l2 2-2 2-2-2-3 3-2-2 3-3-2-2 2-2 2 2z';
- return <svg viewBox="0 0 24 24" aria-hidden="true"><path d={d} fill={c} stroke="#0008" stroke-width="1" fill-rule="evenodd"/>{k.key==='R'&&<circle cx="12" cy="12" r="10.5" fill="none" stroke="var(--tf-gold-hi)" stroke-width="1.2" stroke-dasharray="2 2"/>}</svg>;
+ return <svg viewBox="0 0 24 24" aria-hidden="true"><path d={d} fill={c} stroke="#0008" stroke-width="1" fill-rule="evenodd"/></svg>;
 }
 export function Hotbar({toast}:{toast:(text:string)=>void}){
  const s=useGame(),skills=skillsFor(s),flashes=lastCast.value,now=performance.now();
@@ -24,7 +22,7 @@ export function Hotbar({toast}:{toast:(text:string)=>void}){
    const flash=now-(flashes[k.id]??-1e9)<350;
    const bound=keys[`skill:${k.slot}` as Action];
    const tip=`${bound} · ${k.name}\n${k.desc}\nคูลดาวน์ ${k.cooldown/1000} วิ${locked?` · ปลดล็อกที่ Lv ${k.unlock}`:''}`;
-   return <div key={k.id} class={`hb-slot ${locked?'locked':''} ${left===0&&!locked?'ready':''} ${flash?'flash':''} ${k.key==='R'?'ult':''}`}>
+   return <div key={k.id} class={`hb-slot ${locked?'locked':''} ${left===0&&!locked?'ready':''} ${flash?'flash':''}`}>
     <button type="button" class="hb-cast" title={tip} aria-label={`${k.name}${locked?` (ล็อก ถึง Lv ${k.unlock})`:left?` (คูลดาวน์ ${Math.ceil(left/1000)} วิ)`:''}`} onClick={()=>send({type:'cast',id:k.id})}>
      <Glyph k={k}/>
      {!locked&&left>0&&<span class="hb-cd" style={{background:`conic-gradient(#000b ${frac}turn,transparent 0)`}}><b>{Math.ceil(left/1000)}</b></span>}

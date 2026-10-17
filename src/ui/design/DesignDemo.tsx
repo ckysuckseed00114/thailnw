@@ -13,11 +13,11 @@ import {Purse,TopBar} from '../hud/TopBar';
 import {QuestTracker} from '../hud/QuestTracker';
 import {SoundFX} from '../../services/SoundFX';
 
-const SWATCHES:[string,string][]=[['--tf-gold','ทองอุ่น'],['--tf-leaf','ใบไม้'],['--tf-terracotta','ดินเผา'],['--tf-jade','หยก'],['--tf-sky','ฟ้า'],['--tf-lotus','บัวชมพู'],['--tf-wood','ไม้เข้ม'],['--tf-ink','หมึก'],['--tf-gold-edge','ขอบทอง'],['--tf-gold-hi','ทองไฮไลต์'],['--tf-spirit','ฟ้าวิญญาณ'],['--tf-hp','HP'],['--tf-sp','SP'],['--tf-xp','XP']];
+const SWATCHES:[string,string][]=[['--tf-gold','ทองอุ่น'],['--tf-leaf','ใบไม้'],['--tf-terracotta','ดินเผา'],['--tf-jade','หยก'],['--tf-sky','ฟ้า'],['--tf-lotus','บัวชมพู'],['--tf-wood','ไม้เข้ม'],['--tf-ink','หมึก'],['--tf-gold-edge','ขอบทอง'],['--tf-gold-hi','ทองไฮไลต์'],['--tf-spirit','ฟ้าวิญญาณ'],['--tf-hp','HP'],['--tf-xp','XP']];
 
 // A sample character mid-fight so the HUD components render realistic values.
 const s=createState(Date.parse('2026-10-17T21:37:00'),7);const engine=new CombatEngine(s);engine.dispatch({type:'class',value:'Wand',name:'ลักกี้'});
-s.hero.level=42;s.hero.hp=55;s.room=3;s.region=6;s.shrine={kind:'Haste',until:s.now+42000};s.shield=true;s.cooldowns['Wand-1']=s.now+2600;s.cooldowns['Wand-2']=s.now+5000;s.hero.xp=1800;
+s.hero.level=42;s.hero.hp=55;s.room=3;s.region=6;s.shrine={kind:'Haste',until:s.now+42000};s.shield=true;s.cooldowns['Wand-1']=s.now+2600;s.hero.xp=1800;
 const store=new Store(engine);bindStore(store);
 
 function Section({title,children}:{title:string;children:preact.ComponentChildren}){return <section style={{margin:'0 0 28px'}}><h2 class="tf-title" style={{fontSize:'18px',margin:'0 0 12px'}}>{title}</h2>{children}</section>;}
@@ -42,7 +42,7 @@ function Demo(){
    <div style={{display:'flex',flexWrap:'wrap',gap:'20px',alignItems:'flex-start'}}>
     <Frame style={{padding:'16px',width:'240px'}}><div class="tf-title">กรอบไม้ (wood)</div><p style={{fontSize:'13px',color:'var(--tf-text-2)'}}>หน้าต่างทั่วไป</p></Frame>
     <Frame tone="ink" style={{padding:'16px',width:'240px'}}><div class="tf-title">กรอบหมึก (ink)</div><p style={{fontSize:'13px',color:'var(--tf-text-2)'}}>แผงเวท/กลางคืน</p></Frame>
-    <Frame style={{padding:'14px',width:'260px',display:'grid',gap:'6px'}}><Bar kind="hp" value={18420} max={18420}/><Bar kind="sp" value={64} max={100}/><Bar kind="xp" value={3} max={5}/><div><span class="tf-plate">Lv. 252</span> <span class="tf-key">M</span> <span class="tf-key">ESC</span></div></Frame>
+    <Frame style={{padding:'14px',width:'260px',display:'grid',gap:'6px'}}><Bar kind="hp" value={18420} max={18420}/><Bar kind="xp" value={3} max={5}/><div><span class="tf-plate">Lv. 252</span> <span class="tf-key">M</span> <span class="tf-key">ESC</span></div></Frame>
    </div>
   </Section>
   <Section title="HUD Phase 1: Player frame · Top bar · Purse · Minimap · Quest tracker">

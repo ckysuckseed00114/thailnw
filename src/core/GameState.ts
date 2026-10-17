@@ -1,6 +1,6 @@
 import { DEFAULT_NAME, type GameState, type GameEvent, type Command } from './models';
 export function createState(now=Date.now(),seed=123456789):GameState{return {
- version:4,rng:seed||1,serial:1,now,savedAt:now,started:false,
+ version:5,rng:seed||1,serial:1,now,savedAt:now,started:false,
  hero:{name:DEFAULT_NAME,class:'Sword',level:1,xp:0,hp:100,points:0,attributes:{Strength:0,Vitality:0,Agility:0,Defense:0,Vampirism:0}},
  lm:0,bone:0,inventory:[],chest:[],equipped:{},floor:1,region:1,room:1,unlocked:1,cleared:0,autoAdvance:true,travelAt:0,
  enemies:[],attackAt:now,petAt:now+8000,respawnAt:0,nextRoomAt:0,shrine:null,cooldowns:{},autoCast:{},target:0,

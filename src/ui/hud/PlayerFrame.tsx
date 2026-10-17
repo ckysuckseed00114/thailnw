@@ -1,12 +1,8 @@
 import {stats,xpForLevel} from '../../core/Formulas';
-import {SKILLS,type GameState,type Shrine} from '../../core/models';
+import {SKILLS,type Shrine} from '../../core/models';
 import {heroSVG} from '../../game/HeroArt';
-import {primarySkill,readyAt} from '../../core/Skills';
 import {Bar,Frame} from '../components/Frame';
 import {useGame} from './gameSignal';
-
-/** Charge of the slot-1 skill. Shown as SP until a real MP resource exists (UI_UX_PLAN U4). */
-export function skillCharge(s:GameState){const k=primarySkill(s);return s.respawnAt?0:Math.max(0,Math.min(1,1-(readyAt(s,k)-s.now)/k.cooldown));}
 
 const BUFF_TEXT:Record<Shrine,string>={Fury:'พลังโทสะ · ดาเมจ ×2',Fortune:'โชคลาภ · เงินและของ ×2',Haste:'เร่งเร้า · ตีเร็วขึ้น 50%',Renewal:'ฟื้นฟู · ฟื้น HP 3%/วิ'};
 // Small original glyphs, one per effect, drawn in currentColor.
@@ -34,7 +30,6 @@ export function PlayerFrame(){
    <div class="pf-class">{s.hero.class} · {SKILLS[s.hero.class].name}</div>
    <div class="pf-bars">
     <span class="pf-tag">HP</span><Bar kind="hp" value={s.hero.hp} max={st.maxHp} label="พลังชีวิต"/>
-    <span class="pf-tag">SP</span><Bar kind="sp" value={skillCharge(s)*100} max={100} label="พลังสกิล (ชาร์จสกิลอัตโนมัติ)"/>
    </div>
    <Bar kind="xp" value={s.hero.xp} max={next} label="ค่าประสบการณ์"/>
    <div class="pf-buffs">

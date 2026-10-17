@@ -2,6 +2,7 @@
 
 > อ่านไฟล์นี้ก่อนเริ่มงานทุกครั้ง แล้ว **อัปเดตหัวข้อ "สถานะล่าสุด" และ "บันทึกการส่งต่อ"** ก่อนจบงาน
 > ตรวจล่าสุด: 2026-10-17
+> **กติกาปัจจุบัน:** ดู [GAMEPLAY_UPDATE_2026-10-17.md](GAMEPLAY_UPDATE_2026-10-17.md) ก่อนอ่านบันทึกเก่าที่อาจกล่าวถึง 6 สกิล/MP/5 ห้อง
 
 ## 1. ภาพรวม
 
@@ -12,7 +13,7 @@
 ```powershell
 pnpm install
 pnpm dev      # http://127.0.0.1:5173/  (ต้องเป็น localhost/HTTPS เพราะใช้ Web Locks)
-pnpm test     # vitest — 63 tests
+pnpm test     # vitest — 97 tests
 pnpm build    # tsc --noEmit + vite build → dist/
 ```
 
@@ -22,14 +23,14 @@ pnpm build    # tsc --noEmit + vite build → dist/
 index.html                 entry ของ Vite (#app)
 src/main.ts                boot, Web Lock กันเปิดหลายแท็บ, tick loop 100ms, autosave 5s, offline resume
 src/core/                  ★ กฎเกมทั้งหมด — ห้าม import DOM/Phaser
-  models.ts                type ทั้งหมด: GameState, Command, GameEvent, ค่าคงที่ (CLASSES, SLOTS, RARITIES, REGIONS, SKILLS, ROOMS=5)
+  models.ts                type ทั้งหมด: GameState, Command, GameEvent, ค่าคงที่ (CLASSES, SLOTS, RARITIES, REGIONS, SKILLS, ROOMS=8)
   GameState.ts             createState() เซฟเริ่มต้น · interface Authority · Store (pub/sub)
   CombatEngine.ts          Authority ตัวจริง: tick() เป็น substep 50ms, dispatch(Command) ทุก action ของผู้เล่น, QUESTS
   Formulas.ts              สูตร stats/XP/forge/salvage/seal/monster
   DropTable.ts             PRNG xorshift (random) + สุ่มไอเทม (drop)
   AFKManager.ts            offlineReward() + resume() (เลื่อน timer ทุกตัวตามเวลาที่หายไป)
   Targeting.ts             เป้าหมายที่ใช้ตีจริง (`focusEnemy`: ตัวที่ผู้เล่นเลือก ไม่งั้นตัวหน้าแถว) + `nextTarget`
-  Skills.ts                ตารางสกิล 6 ช่อง/คลาส (1–5 + R), ธาตุ, เลเวลปลดล็อก, helper (`skillsFor`, `readyAt`, `isAuto`)
+  Skills.ts                สกิลเดียวต่อคลาส (ปุ่ม 1, cooldown 7 วิ), helper (`skillsFor`, `readyAt`, `isAuto`)
   RoomTraversal.ts         ROOM_TRAVERSE_MS=6500 และเส้นทางเดินข้ามห้อง (ใช้ร่วม core กับ renderer)
 src/game/                  ★ presentation อย่างเดียว — ห้ามตัดสินดาเมจ/ของดรอป/เงิน
   scenes/CatacombScene.ts  Phaser scene เดียวที่ใช้งาน: ห้อง 3 ส่วนวนกัน, actor, เลขดาเมจ/ฮีล, วงเตือนบอส, ป้ายชื่อ, กล้อง
@@ -38,7 +39,7 @@ src/game/                  ★ presentation อย่างเดียว — �
 src/ui/
   UIManager.ts             modal ทั้งหมด + HUD ส่วนที่เหลือ (HTML string), คีย์ลัด I/C/P/B/M/Q (M = แผนที่โลก)
   theme/tokens.css         ★ design tokens ธีม Thai Fantasy (`--tf-*`) + คลาส .tf-frame/.tf-bar/.tf-plate/.tf-key
-  components/Frame.tsx     Preact: Frame (กรอบไม้/หมึก + มุมลายกนก SVG), Bar (HP/SP/XP)
+  components/Frame.tsx     Preact: Frame (กรอบไม้/หมึก + มุมลายกนก SVG), Bar (HP/XP)
   hud/                     HUD v2 (Preact, CSS grid): Hud.tsx mount, gameSignal.ts (state → signal), prefs.ts (ขนาด UI/เสียง/tracker ใน localStorage `embermarch.ui.v1`), PlayerFrame, TopBar (+Purse, QuickSettings), Minimap, QuestTracker, hud.css
   design/DesignDemo.tsx    หน้า design system (dev เท่านั้น: http://127.0.0.1:5173/design.html)
   icons.ts                 SVG icon ของแถบเมนู
@@ -65,13 +66,14 @@ Store.notify(state, events) → UIManager (HUD)  +  CatacombScene (วาด)  +
 1. **กฎเกมอยู่ใน `src/core` เท่านั้น** — renderer/UI แค่อ่าน state แล้ววาด ถ้าจะเพิ่มกลไกใหม่ ให้เพิ่ม `Command` ใน `models.ts` → จัดการใน `CombatEngine.dispatch` → เขียน test
 2. **ความสุ่มต้องผ่าน `random(s)`** ใน DropTable (seed อยู่ในเซฟ) ห้ามใช้ `Math.random()` ใน core ไม่งั้น test ไม่ deterministic
 3. **เวลาใน core ใช้ `s.now`** ไม่ใช่ `Date.now()` (ยกเว้น main.ts ตอน resume)
-4. **เปลี่ยนรูปแบบเซฟ** → แก้ `createState` + `validateSave` แล้วเพิ่มขั้นใน `STEPS` ของ `migrateSave()` (Storage.ts) พร้อม test · ตอนนี้ **`version:4`** (v1→v2 เพิ่ม `hero.name`, v2→v3 เปลี่ยน `skillAt` เป็น `cooldowns`/`autoCast` ต่อสกิล, v3→v4 เพิ่ม `target`) ตอนโหลดจะ migrate ใน memory และเก็บเซฟเดิมไว้ที่ `embermarch.save.v1.backup-v1` ครั้งเดียว · ชื่อ key `embermarch.save.v1` เป็นแค่ชื่อช่องเก็บ ไม่ใช่เวอร์ชัน ถ้าเซฟไม่ผ่าน validation เกมจะหยุดและไม่ลบเซฟ
+4. **เปลี่ยนรูปแบบเซฟ** → แก้ `createState` + `validateSave` แล้วเพิ่มขั้นใน `STEPS` ของ `migrateSave()` (Storage.ts) พร้อม test · ตอนนี้ **`version:5`** (v1→v2 เพิ่มชื่อ, v2→v3 cooldown, v3→v4 target, v4→v5 สกิลเดียว/8 ห้อง/boss summons) ตอนโหลดจะ migrate ใน memory และเก็บเซฟเดิมครั้งเดียว · ชื่อ key `embermarch.save.v1` เป็นแค่ชื่อช่องเก็บ ไม่ใช่เวอร์ชัน ถ้าเซฟไม่ผ่าน validation เกมจะหยุดและไม่ลบเซฟ
 5. timer ใหม่ใน state (`xxxAt`) ต้องเพิ่มใน `resume()` ของ AFKManager ด้วย ไม่งั้นจะเพี้ยนหลังกลับมาจาก offline
 
 ## 4. ระบบเกมสรุปสั้น
 
-- 5 อาชีพ: Sword, Spear, Wand, Axe, Dagger (สกิลอัตโนมัติทุก 7 วินาที, Sword/Spear/Wand ตีทั้งแถว, Axe มี stun)
-- 11 region ต่อ floor, region ละ 5 ห้อง (4 ห้องมอน 3 ตัว + ห้องบอส) ข้ามห้องใช้เวลา 6.5 วินาที
+- 5 อาชีพ: Sword, Spear, Wand, Axe, Dagger; คลาสละ 1 สกิล cooldown 7 วินาที ไม่มีมานา (Sword/Spear/Wand ตีทั้งแถว, Axe มี stun)
+- 11 region ต่อ floor, region ละ 8 ห้อง (7 ห้องมอน 3 ตัว + ห้องบอส) ข้ามห้องใช้เวลา 6.5 วินาที
+- บอสเรียกผู้คุ้มกันที่ HP 2/3 และ 1/3 แต่ยังตีต่อ; ตัวละครมีโอกาสหลบการโจมตีปกติและแสดงท่าถอย/กระโดด
 - ตายแล้วเกิดใหม่ใน 3 วินาทีที่ห้อง 1 · Seal เปิด floor ถัดไป
 - ไอเทม 7 slot × 6 rarity, forge / salvage / lock / equip best · สัตว์เลี้ยง 4 ตัว · shrine 4 แบบ · quest 3 อัน · shop
 - รางวัลตอน offline: 75% ของอัตราเฉลี่ย 24 ชม. สูงสุด 8 ชม. ต้องกด claim
@@ -89,11 +91,11 @@ Store.notify(state, events) → UIManager (HUD)  +  CatacombScene (วาด)  +
 
 | ตรวจ | ผล |
 | --- | --- |
-| `pnpm test` | ✅ 101/101 ผ่าน |
+| `pnpm test` | ✅ 97/97 ผ่าน |
 | `pnpm build` (tsc strict + vite) | ✅ ผ่าน · Phaser chunk 1.2 MB / 332 KB gzip (มี warning chunk ใหญ่ ซึ่งเป็นเรื่องปกติ) |
-| ทดสอบในเบราว์เซอร์ (port 5176, เซฟแยก) | ✅ เลือก Sword → สู้ → ข้ามห้อง → เข้า region 2 ได้ · desktop 1024×768 และ mobile 375×812 แสดงผลถูก · tab ใหม่ไม่มี console error |
+| ทดสอบในเบราว์เซอร์ (port 5177, เซฟแยก) | ✅ เลือก Sword ได้ · HUD เหลือ 1 สกิล ไม่มี SP/MP · มินิแมพแสดง 1/8 · ไม่มี console error; การผ่านบอส 8 ห้องตรวจด้วย core tests |
 
-**เสร็จแล้ว:** core ครบทุกระบบ · HUD แบบ immersive · ตัวละครสไตล์ pixel มุม 3/4 top-down (16px ขยาย 4×, บอส 5×) ครบ 5 อาชีพ + มอน 3 แบบ + บอส · เลขดาเมจ pixel font (คริติคอลมี `!`) · เลขฮีลสีเขียว · วงแดงเตือนก่อนบอส slam · แบนเนอร์ชื่อบอส + แถบ HP บอส (HTML) · ป้ายชื่อใต้ตัวละคร · ห้องเชื่อมต่อกัน · เสียง Web Audio · เชื่อม PixelLab MCP แล้ว (แต่เครดิตหมด)
+**เสร็จแล้ว:** core ครบระบบ local · HUD แบบ immersive · ตัวละคร pixel ครบ 5 อาชีพ + มอน 3 แบบ + บอส · เลขดาเมจ/ฮีล · วงเตือนบอส slam · บอสเรียกลูกน้องตาม HP โดยยังโจมตีต่อ · หลบแล้วถอย/กระโดด · ห้องเชื่อมต่อกัน 8 ห้องต่อ region · เสียง Web Audio
 
 **ข้อสังเกต / ความเสี่ยง**
 - ยังไม่มี remote/backup นอกเครื่อง (ยังไม่ได้ติดตั้ง `gh`)
@@ -137,6 +139,7 @@ Store.notify(state, events) → UIManager (HUD)  +  CatacombScene (วาด)  +
 
 ## 9. บันทึกการส่งต่อ (ใหม่สุดอยู่บน)
 
+- **2026-10-17 (13)** — ปรับเกมเพลย์ตามคำขอ: 1 สกิล/อาชีพ, cooldown อย่างเดียว ไม่มี SP/MP, หลบโจมตีปกติแล้วแสดงท่าถอย, 8 ห้อง/region, บอสเรียกลูกน้อง 2 เฟสโดยยังโจมตีและถูกเลือกเป้าได้, save v5 + migration; ดู [GAMEPLAY_UPDATE_2026-10-17.md](GAMEPLAY_UPDATE_2026-10-17.md) · test 97/97, TypeScript/build ผ่าน, browser smoke ผ่าน
 - **2026-10-17 (12)** — ส่งต่องาน UI/UX ให้ ChatGPT: [HANDOFF_UIUX_CHATGPT.md](HANDOFF_UIUX_CHATGPT.md) (มี prompt พร้อมวาง, สถาปัตยกรรม UI, กติกา, core API, งานที่เสร็จ/เหลือ, วิธีตรวจ) + `handoff/embermarch-uiux-handoff.zip` (สร้างใหม่ได้, ไม่ commit) · งานต่อไปของผู้รับคือ Phase 3 เริ่มที่ 3.1–3.3
 - **2026-10-17 (11)** — UI/UX Phase 2 ครบ (2.3–2.5): เลือกเป้าหมายได้ (คลิกศัตรู / T / X) ซึ่งใช้กับการตีปกติ สกิลเป้าเดี่ยว และสัตว์เลี้ยง · ถ้าไม่เลือกจะทำงานแบบเดิมทุกอย่าง · save v4 · Target frame + Boss bar ใหม่ (ระยะ + ตัวนับทุบหนัก) แทน boss-hud เดิม · ป้ายชื่อศัตรู · hit flash / knockback / สั่นจอ (ปิดได้) / VFX ตามธาตุ · ระบบปุ่มลัดกลาง + หน้าต่างเปลี่ยนปุ่ม (บันทึกเฉพาะที่เปลี่ยน) · มือถือ: แชตกับ tracker เปิดได้ทีละอัน · hook debug `window.__embermarch` (มีแค่ตอน dev) · test 101 · ตรวจไม่ทับกันครบทุกขนาด
 - **2026-10-17 (10)** — UI/UX 2.1 / 2.2 / 2.6: **ระบบสกิลใหม่ใน core** (6 สกิล/คลาส, คูลดาวน์แยกต่อสกิล, `cast`/`autocast`, save v3 + backup-v2) · event จาก `dispatch` ไม่หายแล้ว (`tick` คืน event ที่สะสมไว้) · core บอกเหตุผลที่หลบได้ DODGE/SHIELD/BLOCK โดยลำดับการสุ่มเหมือนเดิม · Hotbar (ปุ่ม 1–5/R + auto + เดินหน้าอัตโนมัติ แทน battle-footer เดิม) · ตัวเลขดาเมจตามธาตุ + ตั้งค่า + จำกัดจำนวน · กล่องแชต/ระบบแบบแท็บ · toast ย้ายขึ้นไม่ทับ hotbar · ตรวจไม่ทับกันที่ 375/768/1024/1280/1920 · test 88 · **balance sim (seed เดียว):** ความเร็วโดยรวมใกล้เดิม แต่ Sword ตายเพิ่มจาก 901 เป็น 1,809 ครั้งใน 12 ชม. และ Axe แซงคลาสอื่น (region 26 vs 21–23 ใน 3 ชม.) → ต้องจูนใน Balance v2

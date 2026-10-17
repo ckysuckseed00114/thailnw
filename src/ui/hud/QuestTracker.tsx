@@ -6,8 +6,8 @@ import {prefs,setPref} from './prefs';
 export type TrackedItem={id:string;title:string;detail:string;done:number;total:number;ready?:boolean};
 /** Room objective first, then unclaimed milestone quests; at most three lines (UI_UX_PLAN 1.4). */
 export function trackedItems(s:GameState):TrackedItem[]{
- const total=s.room===ROOMS?1:3,cleared=s.respawnAt?0:Math.max(0,total-s.enemies.length);
- const title=s.respawnAt?'กลับเข้าสู่การต่อสู้':s.nextRoomAt?'ประตูเปิด · กำลังเดินทาง':s.room===ROOMS?'ปราบผู้พิทักษ์ภูมิภาค':'เคลียร์ห้องนี้';
+ const boss=s.enemies.find(e=>e.boss),total=s.room===ROOMS?(boss?1+boss.summons:Math.max(1,s.enemies.length)):3,cleared=s.respawnAt?0:s.nextRoomAt?total:Math.max(0,total-s.enemies.length);
+ const title=s.respawnAt?'กลับเข้าสู่การต่อสู้':s.nextRoomAt?'ประตูเปิด · กำลังเดินทาง':s.room===ROOMS?(boss?'ปราบบอสและผู้คุ้มกัน':'กำจัดผู้คุ้มกันที่เหลือ'):'เคลียร์ห้องนี้';
  const room:TrackedItem={id:'room',title,detail:s.room===ROOMS?'The Hollow Warden':`ห้อง ${s.room}/${ROOMS}`,done:cleared,total};
  const quests=QUESTS.filter(q=>!s.questClaims.includes(q.id)).map(q=>({id:q.id,title:q.name,detail:q.description,done:Math.min(q.target,s[q.metric]),total:q.target,ready:s[q.metric]>=q.target}));
  return [room,...quests.sort((a,b)=>Number(b.ready)-Number(a.ready))].slice(0,3);

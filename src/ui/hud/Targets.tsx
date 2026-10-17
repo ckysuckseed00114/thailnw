@@ -4,7 +4,7 @@ import {focusEnemy,nextTarget} from '../../core/Targeting';
 import {keybinds} from '../keybinds';
 import {currentStore,useGame} from './gameSignal';
 
-/** Boss phases are presentation only: thresholds on the bar, the boss itself does not change behaviour. */
+/** Thresholds are shared with the authority's two guard summons. */
 export const BOSS_PHASES=[2/3,1/3];
 export function bossPhase(e:Enemy){const f=e.hp/e.maxHp;return 1+BOSS_PHASES.filter(t=>f<=t).length;}
 /** Every third boss attack is a slam (CombatEngine); returns hits until the next one, 1 = the next attack. */
@@ -44,7 +44,7 @@ export function BossBar(){
  const s=useGame();const e=s.respawnAt?undefined:s.enemies.find(m=>m.boss&&m.hp>0);if(!e)return null;
  const phase=bossPhase(e),slamIn=hitsUntilSlam(e);
  return <section class="bb" aria-label={`บอส ${e.name}`}>
-  <div class="bb-head"><span class="bb-name">{e.name}</span><span class="bb-sub">ผู้พิทักษ์ {REGIONS[s.region-1]}</span><span class="bb-phase">ระยะ {ROMAN[phase-1]}</span>{stunned(s,e)}</div>
+  <div class="bb-head"><span class="bb-name">{e.name}</span><span class="bb-sub">ผู้พิทักษ์ {REGIONS[s.region-1]}</span><span class="bb-phase">ระยะ {ROMAN[phase-1]}{e.summons>0?` · เรียกผู้คุ้มกัน ${e.summons}/2`:''}</span>{stunned(s,e)}</div>
   <HpBar e={e} boss/>
   <div class={`bb-slam ${slamIn===1?'next':''}`} aria-live="polite">
    {[0,1,2].map(i=><i key={i} class={i<3-slamIn?'on':''}/>)}
