@@ -2,6 +2,8 @@ import Phaser from 'phaser';
 import './styles/base.css';
 import './styles/hud-immersive.css';
 import './styles/characters.css';
+import './ui/theme/tokens.css';
+import {mountHud} from './ui/hud/Hud';
 import {createState,Store} from './core/GameState';
 import {CombatEngine} from './core/CombatEngine';
 import {resume} from './core/AFKManager';
@@ -19,6 +21,7 @@ async function boot(){
  let last=performance.now(),lastSave=last;let saveFailed=false;
  const save=()=>{try{state.savedAt=state.now;repository.save(state);if(saveFailed)document.querySelector('#save-status-hud')!.textContent='◇ Saved on this device';saveFailed=false;}catch{if(!saveFailed)ui.toast('Storage is full or unavailable. Keep this tab open to preserve progress.');saveFailed=true;document.querySelector('#save-status-hud')!.textContent='⚠ Progress could not be saved';}};
  const ui=new UIManager(store,save);
+ const unmountHud=mountHud(store,id=>ui.open(id));
  // WebGL cannot recover from a zero-size boot (hidden tab or unlaid-out pane), so wait for a real size.
  const mount=document.querySelector<HTMLElement>('#game')!;let game:Phaser.Game|undefined;
  const start=()=>{game=new Phaser.Game({type:Phaser.AUTO,parent:mount,width:mount.clientWidth,height:mount.clientHeight,backgroundColor:'#080b14',pixelArt:true,antialias:false,scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH},scene:[new CatacombScene(store)],audio:{noAudio:true},fps:{target:60}});};
@@ -26,7 +29,7 @@ async function boot(){
  const timer=window.setInterval(()=>{if(document.hidden)return;const now=performance.now(),elapsed=now-last;last=now;if(elapsed>5000){resume(state,Date.now());store.notify();save();if(elapsed>=60000&&state.afk.seconds>=60)ui.open('afk');}else store.tick(elapsed);if(now-lastSave>=5000){save();lastSave=now;}},100);
  document.addEventListener('visibilitychange',()=>{if(document.hidden){save();}else{const away=Date.now()-state.savedAt;resume(state,Date.now());last=performance.now();store.notify();save();if(away>=60000&&state.afk.seconds>=60)ui.open('afk');}});
  window.addEventListener('pagehide',()=>{save();});
- if(import.meta.hot)import.meta.hot.dispose(()=>{clearInterval(timer);game?.destroy(true);});
+ if(import.meta.hot)import.meta.hot.dispose(()=>{clearInterval(timer);unmountHud();game?.destroy(true);});
  // Keep the exclusive browser lock alive until this document unloads.
  await new Promise<void>(()=>{});
 }

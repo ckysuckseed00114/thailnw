@@ -1,0 +1,44 @@
+/* HUD v2 layer (UI_UX_PLAN Phase 1). The old hero card and map panel are hidden while it is mounted. */
+.hud-root{position:absolute;inset:0;pointer-events:none;z-index:21;transform-origin:top left}
+.hud-root>*{pointer-events:auto}
+.hud-v2 .hero-card,.hud-v2 .mini-map{display:none!important}
+.hud-v2 .room-objective{top:150px}.hud-v2 .shrine-card{top:272px}
+
+/* Player frame */
+.pf{position:absolute;top:18px;left:20px;width:300px;min-height:112px;padding:10px 12px 10px 92px}
+.pf-portrait{position:absolute;left:10px;top:12px;width:72px;height:72px;border-radius:50%;overflow:hidden;background:radial-gradient(circle at 50% 35%,#4a3a28,#140e0a 70%);border:2px solid var(--tf-gold-edge);box-shadow:0 0 0 2px #000,0 0 0 4px var(--tf-gold-lo),inset 0 0 12px #000}
+.pf-portrait svg{width:100%;height:100%;transform:scale(1.25) translateY(6%)}
+.pf-portrait.down{filter:grayscale(1) brightness(.6)}
+.pf-level{position:absolute;left:12px;top:84px;width:68px;justify-content:center;padding:2px 0;font-size:11px}
+/* Thai stacks vowels and tone marks above the line; a tight line-height with overflow:hidden clips them. */
+.pf-name{font-size:17px;line-height:1.5;margin-top:-4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pf-class{font:var(--tf-fs-xs) var(--tf-font-body);color:var(--tf-text-3);margin:1px 0 6px}
+.pf-bars{display:grid;grid-template-columns:auto 1fr;gap:3px 6px;align-items:center;margin-bottom:4px}
+.pf-tag{font:400 9px var(--tf-font-num);color:var(--tf-text-2)}
+.pf-buffs{display:flex;gap:4px;margin-top:6px;min-height:20px;align-items:center}
+.pf-buff{position:relative;display:inline-grid;place-items:center;width:20px;height:20px;color:var(--tone);background:#0d0f17;border:1px solid var(--tf-gold-lo);border-radius:3px}
+.pf-buff svg{width:13px;height:13px}
+.pf-buff small{position:absolute;right:-3px;bottom:-5px;font:400 7px var(--tf-font-num);color:#fff;text-shadow:0 1px 0 #000,1px 0 #000,-1px 0 #000}
+.pf-down{font:500 11px var(--tf-font-head);color:var(--tf-hp-hi)}
+
+/* Minimap */
+.mm{position:absolute;top:70px;right:22px;width:168px;display:grid;justify-items:center}
+.mm-area{position:relative;z-index:1;margin-bottom:-11px;max-width:168px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mm-clock{position:absolute;top:22px;right:-4px;z-index:1;font:400 10px var(--tf-font-num);color:var(--tf-text);background:#0d0f17d9;border:1px solid var(--tf-gold-lo);border-radius:3px;padding:2px 5px}
+.mm-disc{width:150px;height:150px;filter:drop-shadow(0 4px 10px #000c)}
+.mm-hero{transition:cx .25s linear,cy .25s linear}
+.mm-room{margin-top:-8px;font:500 11px var(--tf-font-head);color:var(--tf-text-2);background:#0d0f17d9;border:1px solid var(--tf-gold-lo);border-radius:999px;padding:1px 10px}
+.mm-open{position:absolute;right:4px;top:142px;padding:3px;border-radius:50%;background:linear-gradient(#3a2a1c,#1d140e);border:1px solid var(--tf-gold-edge)}
+.mm-open:hover{border-color:var(--tf-gold-hi)}
+@media (prefers-reduced-motion:reduce){.mm-hero{transition:none}}
+
+@media(max-width:1100px){.pf{left:12px;width:260px}.mm{right:12px}}
+@media(max-width:760px){
+ .pf{top:10px;left:10px;width:208px;min-height:94px;padding:8px 8px 8px 66px}
+ .pf-portrait{left:7px;top:9px;width:52px;height:52px}.pf-level{left:6px;top:64px;width:56px;font-size:9px}
+ .pf-name{font-size:14px}.pf-class{display:none}.pf-bars{margin-top:4px}.tf-bar{height:12px}.tf-bar>b{font-size:8px;line-height:12px}
+ .mm{top:84px;right:8px;width:96px}.mm-disc{width:86px;height:86px}.mm-area{font-size:10px;padding:2px 8px;max-width:96px}
+ .mm-clock{top:-2px;right:-2px;font-size:8px}.mm-room{font-size:9px}.mm-open{top:84px;right:0}
+ .hud-v2 .dungeon-title{width:176px;height:auto;padding:9px 10px}.hud-v2 .dungeon-title h2{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+ .mm-area{display:none}.mm-room{margin-top:-2px}
+}

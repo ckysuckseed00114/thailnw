@@ -1,0 +1,37 @@
+/* Thai-fantasy design tokens (docs/UI_UX_PLAN.md §1.4). Components read only these variables. */
+:root{
+ /* World palette (warm, daylight) */
+ --tf-gold:#e8a93b;--tf-leaf:#4e8f3a;--tf-terracotta:#b5533a;--tf-jade:#2f8f86;--tf-sky:#5aa9e6;--tf-lotus:#e68bb0;
+ /* UI chrome (dark wood, ink, gold leaf, spirit light) */
+ --tf-wood:#1e140f;--tf-wood-2:#2b1d15;--tf-ink:#121726;--tf-ink-2:#1a2133;
+ --tf-gold-edge:#c9973f;--tf-gold-hi:#f3d28a;--tf-gold-lo:#7a5622;--tf-spirit:#5fc8ff;--tf-spirit-lo:#1d5b86;
+ --tf-text:#f6ead0;--tf-text-2:#cdbf9f;--tf-text-3:#94876c;
+ /* Resource bars */
+ --tf-hp:#d8443b;--tf-hp-hi:#ff8a73;--tf-sp:#3f8fe0;--tf-sp-hi:#9fd6ff;--tf-xp:#e8b84a;--tf-bar-bg:#0b0c12;
+ /* Type */
+ --tf-font-ornate:'Srisakdi','Kanit',Georgia,serif;
+ --tf-font-head:'Kanit','Cormorant Garamond',Georgia,sans-serif;
+ --tf-font-body:'Sarabun','DM Sans',system-ui,sans-serif;
+ --tf-font-num:'Silkscreen','Kanit',monospace;
+ --tf-fs-xs:10px;--tf-fs-sm:12px;--tf-fs-md:14px;--tf-fs-lg:18px;--tf-fs-xl:24px;
+ /* Space, shape, depth */
+ --tf-gap-1:4px;--tf-gap-2:8px;--tf-gap-3:12px;--tf-gap-4:16px;--tf-gap-5:24px;
+ --tf-radius:4px;--tf-border:2px;
+ --tf-shadow:0 4px 14px #000a,inset 0 0 0 2px #0008;
+ --tf-ui-scale:1;
+}
+/* Frame: dark wood panel with a gold-leaf double edge and four ornament corners. */
+.tf-frame{position:relative;color:var(--tf-text);font-family:var(--tf-font-body);background:linear-gradient(170deg,var(--tf-wood-2),var(--tf-wood) 70%);border:var(--tf-border) solid var(--tf-gold-edge);border-radius:var(--tf-radius);box-shadow:var(--tf-shadow),inset 0 0 0 4px var(--tf-wood),inset 0 0 0 5px #c9973f55}
+.tf-frame.ink{background:linear-gradient(170deg,var(--tf-ink-2),var(--tf-ink) 70%)}
+.tf-frame>.tf-corner{position:absolute;width:18px;height:18px;pointer-events:none;color:var(--tf-gold-hi)}
+.tf-corner.tl{top:-7px;left:-7px}.tf-corner.tr{top:-7px;right:-7px;transform:scaleX(-1)}.tf-corner.bl{bottom:-7px;left:-7px;transform:scaleY(-1)}.tf-corner.br{bottom:-7px;right:-7px;transform:scale(-1)}
+.tf-title{font-family:var(--tf-font-head);font-weight:500;color:var(--tf-gold-hi);letter-spacing:.3px;text-shadow:0 2px 0 #000}
+.tf-ornate{font-family:var(--tf-font-ornate);color:var(--tf-gold-hi);text-shadow:0 2px 0 #3a1d0e}
+.tf-plate{display:inline-flex;align-items:center;gap:6px;padding:3px 12px;font:500 var(--tf-fs-sm) var(--tf-font-head);color:var(--tf-gold-hi);background:linear-gradient(#3a2a1c,#1d140e);border:1px solid var(--tf-gold-edge);border-radius:999px;box-shadow:0 2px 6px #0009}
+/* Bar: framed resource gauge with a highlight band and centred value. */
+.tf-bar{position:relative;height:14px;background:var(--tf-bar-bg);border:1px solid #000;box-shadow:0 0 0 1px var(--tf-gold-lo);border-radius:2px;overflow:hidden}
+.tf-bar>i{position:absolute;inset:0 auto 0 0;background:linear-gradient(var(--hi) 0 35%,var(--c) 35%);transition:width .25s ease-out}
+.tf-bar>b{position:relative;display:block;text-align:center;font:400 9px/14px var(--tf-font-num);color:#fff;text-shadow:0 1px 0 #000,1px 0 0 #000,-1px 0 0 #000}
+.tf-bar.hp{--c:var(--tf-hp);--hi:var(--tf-hp-hi)}.tf-bar.sp{--c:var(--tf-sp);--hi:var(--tf-sp-hi)}.tf-bar.xp{--c:var(--tf-xp);--hi:#ffe39a;height:5px}
+.tf-key{display:inline-grid;place-items:center;min-width:18px;height:18px;padding:0 4px;font:400 9px var(--tf-font-num);color:var(--tf-text);background:#0d0f17;border:1px solid var(--tf-gold-edge);border-radius:3px}
+@media (prefers-reduced-motion:reduce){.tf-bar>i{transition:none}}
