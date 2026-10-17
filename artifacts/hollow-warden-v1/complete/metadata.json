@@ -1,0 +1,77 @@
+{
+  "group_id": "c07fc2cb-cd29-4b4f-b2fd-823749c19c84",
+  "states": [
+    {
+      "character": {
+        "id": "4b770271-7321-4d41-b406-e164c17c3124",
+        "name": "Idle",
+        "prompt": "Colossal ancient temple guardian giant boss, inspired by Thai yaksha gate guardians, original design. Hulking towering body with dark slate-grey stone skin and cracked stony texture, fierce face with bulging glowing ember-orange eyes and two upward ivory tusks, tall tiered pointed golden crown with red jewels, ornate gilded shoulder plates and armored belt with deep crimson cloth sash, a hollow cracked chest cavity glowing with orange ember fire, holding a huge spiked black-iron temple mace club in one hand resting on the ground. Imposing heavy stance in side view, full body visible including club and crown, compact readable 16-bit GBA RPG boss sprite, high contrast, crisp single-pixel dark outline, warm ember highlights and cool stone shadows. Transparent background, no scenery, no text, no extra creatures.",
+        "size": {
+          "width": 180,
+          "height": 180
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "side",
+        "created_at": "2026-10-17T15:54:15.246610+00:00"
+      },
+      "folder": "Idle",
+      "frames": {
+        "rotations": {
+          "south": "Idle/rotations/south.png",
+          "south-east": "Idle/rotations/south-east.png",
+          "east": "Idle/rotations/east.png",
+          "north-east": "Idle/rotations/north-east.png",
+          "north": "Idle/rotations/north.png",
+          "north-west": "Idle/rotations/north-west.png",
+          "west": "Idle/rotations/west.png",
+          "south-west": "Idle/rotations/south-west.png"
+        },
+        "animations": {
+          "Warden_Ground_Slam": {
+            "south-east": [
+              "Idle/animations/Warden_Ground_Slam/south-east/frame_000.png",
+              "Idle/animations/Warden_Ground_Slam/south-east/frame_001.png",
+              "Idle/animations/Warden_Ground_Slam/south-east/frame_002.png",
+              "Idle/animations/Warden_Ground_Slam/south-east/frame_003.png",
+              "Idle/animations/Warden_Ground_Slam/south-east/frame_004.png",
+              "Idle/animations/Warden_Ground_Slam/south-east/frame_005.png",
+              "Idle/animations/Warden_Ground_Slam/south-east/frame_006.png"
+            ]
+          },
+          "Warden_Summon": {
+            "south-east": [
+              "Idle/animations/Warden_Summon/south-east/frame_000.png",
+              "Idle/animations/Warden_Summon/south-east/frame_001.png",
+              "Idle/animations/Warden_Summon/south-east/frame_002.png",
+              "Idle/animations/Warden_Summon/south-east/frame_003.png",
+              "Idle/animations/Warden_Summon/south-east/frame_004.png",
+              "Idle/animations/Warden_Summon/south-east/frame_005.png",
+              "Idle/animations/Warden_Summon/south-east/frame_006.png"
+            ]
+          },
+          "Warden_Walk": {
+            "south-east": [
+              "Idle/animations/Warden_Walk/south-east/frame_000.png",
+              "Idle/animations/Warden_Walk/south-east/frame_001.png",
+              "Idle/animations/Warden_Walk/south-east/frame_002.png",
+              "Idle/animations/Warden_Walk/south-east/frame_003.png",
+              "Idle/animations/Warden_Walk/south-east/frame_004.png"
+            ]
+          },
+          "Warden_Idle": {
+            "south-east": [
+              "Idle/animations/Warden_Idle/south-east/frame_000.png",
+              "Idle/animations/Warden_Idle/south-east/frame_001.png",
+              "Idle/animations/Warden_Idle/south-east/frame_002.png",
+              "Idle/animations/Warden_Idle/south-east/frame_003.png",
+              "Idle/animations/Warden_Idle/south-east/frame_004.png"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-10-17T16:33:06.740885"
+}

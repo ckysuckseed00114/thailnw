@@ -1,0 +1,7 @@
+{
+ "character_id": "4b770271-7321-4d41-b406-e164c17c3124",
+ "animation_name": "Warden_Walk",
+ "action_description": "heavy slow stomping walk forward, arms swinging",
+ "frame_count": 4,
+ "directions": ["south-east"]
+}

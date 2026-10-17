@@ -1,0 +1,10 @@
+{
+ "description": "Colossal ancient temple guardian giant boss, inspired by Thai yaksha gate guardians, original design. Hulking towering body with dark slate-grey stone skin and cracked stony texture, fierce face with bulging glowing ember-orange eyes and two upward ivory tusks, tall tiered pointed golden crown with red jewels, ornate gilded shoulder plates and armored belt with deep crimson cloth sash, a hollow cracked chest cavity glowing with orange ember fire, holding a huge spiked black-iron temple mace club in one hand resting on the ground. Imposing heavy stance in side view, full body visible including club and crown, compact readable 16-bit GBA RPG boss sprite, high contrast, crisp single-pixel dark outline, warm ember highlights and cool stone shadows. Transparent background, no scenery, no text, no extra creatures.",
+ "image_size": {"width": 128, "height": 128},
+ "view": "side",
+ "outline": "single color black outline",
+ "shading": "detailed shading",
+ "detail": "high detail",
+ "template_id": "mannequin",
+ "mode": "standard"
+}

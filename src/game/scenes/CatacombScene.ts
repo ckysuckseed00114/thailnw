@@ -7,6 +7,7 @@ import {HAND_FROM_FEET,MONSTERS,heroSprite,monsterSprite,weaponSprite,type Sprit
 import {SWORD_ART,swordWalkPath,swordAttackPath} from '../SwordArt';
 import {AXE_ART,axeWalkPath,axeAttackPath} from '../AxeArt';
 import {SPEAR_ART,spearIdlePath,spearWalkPath,spearAttackPath} from '../SpearArt';
+import {BOSS_ART,bossFramePath,bossTexture} from '../BossArt';
 import {ROOM_ENTRY_X,ROOM_STRIDE,traversalPoint,traversalProgress} from '../../core/RoomTraversal';
 import {focusEnemy} from '../../core/Targeting';
 import type {Element} from '../../core/Skills';
@@ -40,6 +41,7 @@ export class CatacombScene extends Phaser.Scene {
   for(let i=0;i<SPEAR_ART.idleFrames;i++)this.load.image(`hero-Spear-idle-${i}`,spearIdlePath(i));
   for(let i=0;i<SPEAR_ART.walkFrames;i++)this.load.image(`hero-Spear-walk-${i}`,spearWalkPath(i));
   for(let i=0;i<SPEAR_ART.attackFrames;i++)this.load.image(`hero-Spear-attack-${i}`,spearAttackPath(i));
+  for(const [anim,n] of [['idle',BOSS_ART.idleFrames],['walk',BOSS_ART.walkFrames],['slam',BOSS_ART.slamFrames],['summon',BOSS_ART.summonFrames]] as const)for(let i=0;i<n;i++)this.load.image(bossTexture(anim,i),bossFramePath(anim,i));
  }
  create(){
   for(let i=0;i<3;i++){
@@ -90,12 +92,13 @@ export class CatacombScene extends Phaser.Scene {
   this.texture('companion',['..g......g..','..gG....Gg..','...GGGGGG...','..GGGGGGGG..','..GkGGGGkG..','..GGGyyGGG..','...GGGGGG...','...gGGGGg...','....g..g....'],{g:0x4c7353,G:0xa9cc82,k:0x182d37,y:0xf3dfa1});
  }
  private figure(id:number,x:number,y:number,boss:boolean,hero=false,name=''):Actor{
-  const kind=this.store.state.hero.class,scale=boss?BOSS_PX:hero?PX:ENEMY_PX,imported=hero?importedArt(kind):null,bodyScale=imported?imported.scale:scale;
-  const look=hero?heroSprite(kind):monsterSprite(name,boss);const key=hero?`hero-${kind}-0`:boss?'mon-boss':`mon-${MONSTERS[name]?name:'Crypt Sentinel'}`;
-  const shadow=this.add.ellipse(0,FEET+1,boss?96:hero?52:56,boss?22:14,0x050813,.5);
+  // Hero art and the boss come from PixelLab frames; regular monsters are code-drawn pixel sprites.
+  const kind=this.store.state.hero.class,scale=boss?BOSS_PX:hero?PX:ENEMY_PX,imported=hero?importedArt(kind):boss?BOSS_ART:null,bodyScale=imported?imported.scale:scale;
+  const look=hero?heroSprite(kind):monsterSprite(name,boss);const key=hero?`hero-${kind}-0`:boss?bossTexture('idle',0):`mon-${MONSTERS[name]?name:'Crypt Sentinel'}`;
+  const shadow=this.add.ellipse(0,FEET+1,boss?104:hero?52:56,boss?24:14,0x050813,.5);
   const body=this.add.sprite(0,FEET,key).setOrigin(.5,imported?imported.originY:1).setScale(bodyScale);
   const hand={x:boss?42:17,y:FEET-(boss?8*BOSS_PX:HAND_FROM_FEET*(hero?PX:ENEMY_PX))};
-  const weapon=this.add.container(hand.x,hand.y).setAngle(25);const held=hero?kind:boss?'Axe':name==='Crypt Sentinel'?'Sword':null;
+  const weapon=this.add.container(hand.x,hand.y).setAngle(25);const held=hero?kind:boss?null:name==='Crypt Sentinel'?'Sword':null;
   if(held&&!imported)weapon.add(this.add.image(0,0,`weapon-${held}`).setOrigin(.5,.85).setScale(boss?4.4:hero?PX:3.2));
   const top=FEET-(imported?imported.visualHeight:look.rows.length)*bodyScale;
   // Hero: name plate under the feet. Regular enemies: a small name over the health bar (the boss has the HUD bar).
@@ -139,7 +142,7 @@ export class CatacombScene extends Phaser.Scene {
   const left=boss.attackAt-(s.now+Math.max(0,time-this.lastStateAt));if(left<=0||left>1500)return;
   const p=1-left/1500,x=this.hero.root.x,y=this.hero.root.y+FEET,w=150,h=66;
   this.warn.fillStyle(0xff3b2f,.1+.15*p).fillEllipse(x,y,w,h).fillStyle(0xff5a3c,.35).fillEllipse(x,y,w*p,h*p).lineStyle(3,0xff6a4d,.55+.4*p).strokeEllipse(x,y,w,h);
-  const a=this.actors.get(boss.id);if(a){this.warn.lineStyle(2+p*3,0xff7d52,.35+.5*p).strokeEllipse(a.root.x,a.root.y+FEET,105+p*35,30+p*10);if(!this.reduced){a.body.y=FEET+Math.sin(p*Math.PI)*5;a.body.setScale(BOSS_PX*(1+.08*p),BOSS_PX*(1-.11*p));a.weapon.angle=-20-55*p;}}
+  const a=this.actors.get(boss.id);if(a){this.warn.lineStyle(2+p*3,0xff7d52,.35+.5*p).strokeEllipse(a.root.x,a.root.y+FEET,105+p*35,30+p*10);if(a.attackUntil<=time){a.body.setTexture(this.bossWindup(p));if(!this.reduced){a.body.y=FEET;a.body.setScale(BOSS_ART.scale*(1+.06*p));}}}
  }
  private walkPose(a:Actor,time:number,face:number){
   a.body.setFlipX(face<0);a.weapon.setScale(face,1).setPosition(face*a.hand.x,a.hand.y);
@@ -151,8 +154,9 @@ export class CatacombScene extends Phaser.Scene {
  private idle(a:Actor,time:number){if(a.attackUntil>time)return;if(a===this.hero){const kind=this.store.state.hero.class;a.body.setTexture(kind==='Spear'?`hero-Spear-idle-${this.reduced?0:Math.floor(time/270)%SPEAR_ART.idleFrames}`:`hero-${kind}-0`);a.body.y=FEET+(this.reduced?0:Math.sin(time/340));}else this.enemyPose(a,time,false);}
  /** Species-specific acting is visual only; the authority still decides combat outcomes. */
  private enemyPose(a:Actor,time:number,moving:boolean){
-  const t=time+a.phase,k=a.kind,base=k==='boss'?BOSS_PX:ENEMY_PX,period=k==='boss'?4300:2700+(a.phase%4)*430;
-  const texture=`mon-${k}${!this.reduced&&!moving&&t%period<115?'-blink':''}`;if(a.body.texture.key!==texture)a.body.setTexture(texture);
+  const t=time+a.phase,k=a.kind,base=k==='boss'?BOSS_ART.scale:ENEMY_PX,period=k==='boss'?4300:2700+(a.phase%4)*430;
+  const texture=k==='boss'?(moving?bossTexture('walk',this.reduced?0:Math.floor(t/190)%BOSS_ART.walkFrames):bossTexture('idle',this.reduced?0:Math.floor(t/280)%BOSS_ART.idleFrames))
+   :`mon-${k}${!this.reduced&&!moving&&t%period<115?'-blink':''}`;if(a.body.texture.key!==texture)a.body.setTexture(texture);
   if(!moving){const face=this.hero.root.x>=a.root.x?1:-1;a.body.setFlipX(face<0);a.weapon.setScale(face,1).setPosition(face*a.hand.x,a.hand.y);}
   if(this.reduced){a.body.y=FEET;a.body.angle=0;a.body.setScale(base);a.shadow.setScale(1);a.shadow.setAlpha(.5);return;}
   const breath=Math.sin(t/(k==='boss'?480:k==='Crypt Sentinel'?530:340));
@@ -167,8 +171,17 @@ export class CatacombScene extends Phaser.Scene {
  private anticipate(a:Actor,e:GameState['enemies'][number],s:GameState,time:number){
   if(this.reduced||e.stunnedUntil>s.now||s.nextRoomAt)return;
   const wind=e.boss?650:360,left=e.attackAt-(s.now+Math.max(0,time-this.lastStateAt));if(left<=0||left>wind)return;
-  const p=1-left/wind,base=e.boss?BOSS_PX:ENEMY_PX,face=a.body.flipX?-1:1;
+  const p=1-left/wind,base=e.boss?BOSS_ART.scale:ENEMY_PX,face=a.body.flipX?-1:1;
+  // The boss raises its fists through the wind-up frames; the fall happens in bossStrike when the hit lands.
+  if(e.boss){a.body.setTexture(this.bossWindup(p));a.body.setScale(base);return;}
   a.body.y+=3*p;a.body.setScale(base*(1+.04*p),base*(1-.07*p));a.weapon.angle=face*(22-70*p);
+ }
+ private bossWindup(p:number){return bossTexture('slam',Math.min(BOSS_ART.slamImpact-1,Math.floor(p*BOSS_ART.slamImpact)));}
+ /** Boss attack: the fists come down through the impact frames, then it settles back to idle. */
+ private bossStrike(a:Actor,heavy:boolean){
+  const frames=BOSS_ART.slamFrames-BOSS_ART.slamImpact,step=heavy?95:80;a.attackUntil=this.time.now+frames*step+140;
+  for(let i=0;i<frames;i++)this.time.delayedCall(i*step,()=>{if(a.body.active)a.body.setTexture(bossTexture('slam',BOSS_ART.slamImpact+i));});
+  if(!this.reduced){const dust=this.add.ellipse(a.root.x+(a.body.flipX?-46:46),a.root.y+FEET,heavy?120:70,heavy?30:18,0xb08860,.35).setDepth(a.root.y-1);this.fade(dust,heavy?520:360,{scale:heavy?2.2:1.6});}
  }
  private render(s:GameState,events:GameEvent[]){
   this.lastStateAt=this.time.now;
@@ -204,7 +217,8 @@ export class CatacombScene extends Phaser.Scene {
   const t=this.add.text(x,y,text,{fontFamily:FONT,fontSize:`${size}px`,fontStyle:'bold',color,stroke,strokeThickness:Math.max(4,Math.round(size/5))}).setOrigin(.5).setDepth(1100+size).setScale(1.45);this.popups++;
   this.tweens.add({targets:t,scale:1,duration:110,ease:'Back.easeOut'});this.tweens.add({targets:t,y:y-46,alpha:0,delay:380,duration:620,ease:'Sine.easeIn',onComplete:()=>{this.popups--;t.destroy();}});
  }
- private swing(a:Actor,target:Actor,crit=false){
+ private swing(a:Actor,target:Actor,crit=false,heavy=false){
+  if(a.kind==='boss'){a.body.setFlipX(target.root.x<a.root.x);this.bossStrike(a,heavy);return;}
   const kind=a===this.hero?this.store.state.hero.class:a.kind==='boss'?'Axe':'Sword';const face=target.root.x>=a.root.x?1:-1;
   a.attackUntil=this.time.now+(kind==='Axe'?420:kind==='Dagger'?190:330);this.tweens.killTweensOf(a.weapon);
   a.body.setFlipX(face<0);a.weapon.setScale(face,1).setPosition(face*a.hand.x,a.hand.y).setAngle(-70*face);
@@ -258,7 +272,7 @@ export class CatacombScene extends Phaser.Scene {
   else if(el==='shadow'){const ghost=this.add.sprite(x,y+FEET,h.body.texture.key).setOrigin(.5,1).setScale(h.body.scaleX).setFlipX(h.body.flipX).setTint(0x8a5cff).setAlpha(.45).setDepth(y-1);this.fade(ghost,360,{x:x-18*(h.body.flipX?-1:1)});}
  }
  private effect(e:GameEvent,s:GameState){
-  const target=this.actors.get(e.target);if(e.type==='hit'&&target){const attacker=e.target===0?this.actors.get(e.source??s.enemies[0]?.id):this.hero;const impact=()=>{if(!target.root.active)return;if(attacker?.root.active)this.swing(attacker,target,!!e.critical);
+  const target=this.actors.get(e.target);if(e.type==='hit'&&target){const attacker=e.target===0?this.actors.get(e.source??s.enemies[0]?.id):this.hero;const impact=()=>{if(!target.root.active)return;if(attacker?.root.active)this.swing(attacker,target,!!e.critical,e.label==='SLAM');
     const y=target.root.y+target.top-6,x=target.root.x+(Math.random()-.5)*16,key=e.target;
     const elem=e.element?ELEMENT_COLOR[e.element as Element]:null,boss=!!s.enemies.find(m=>m.id===e.target)?.boss;
     if(e.label==='SLAM')this.popup(x,y,e.amount?`SLAM -${e.amount}`:'SLAM','#ff6a4d','#3a0f12',18,true,key);
@@ -271,6 +285,6 @@ export class CatacombScene extends Phaser.Scene {
   }
   if(e.type==='skill'){const dest=this.actors.get(e.target)||this.hero;const tint=Number.parseInt((e.element?ELEMENT_COLOR[e.element as Element].fill:'#f1cf88').slice(1),16);const ring=this.add.circle(this.hero.root.x,this.hero.root.y+FEET,25,tint,.05).setStrokeStyle(3,tint,.85).setDepth(900);this.tweens.add({targets:ring,scale:s.hero.class==='Sword'?5:3,alpha:0,duration:500,onComplete:()=>ring.destroy()});if(s.hero.class==='Wand'){const bolt=this.add.circle(this.hero.root.x,this.hero.root.y-10,9,0xffb661).setDepth(1000);this.tweens.add({targets:bolt,x:dest.root.x,y:dest.root.y,duration:240,onComplete:()=>bolt.destroy()});}this.popup(this.hero.root.x,this.hero.root.y+this.hero.top-22,(e.label||'').toUpperCase(),'#f8d88c','#161927',15,true,-1);if(e.element)this.castVfx(e.element as Element);}
   if(e.type==='pet'){const ring=this.add.circle(this.pet.x,this.pet.y,15).setStrokeStyle(2,0xa4e2a2,.8).setDepth(950);this.tweens.add({targets:ring,scale:3,alpha:0,duration:600,onComplete:()=>ring.destroy()});}
-  if(e.type==='summon'){const a=this.actors.get(e.target);if(a){const portal=this.add.ellipse(a.root.x,a.root.y+FEET,90,28,0xd94838,.28).setStrokeStyle(3,0xff8c65,.8).setDepth(a.root.y-1);this.fade(portal,650,{scale:1.8});this.popup(a.root.x,a.root.y+a.top-34,'ผู้คุ้มกัน','#ffb28b','#401518',17,true,e.target);}const boss=s.enemies.find(m=>m.boss),warden=boss&&this.actors.get(boss.id);if(warden&&!this.reduced){warden.attackUntil=this.time.now+460;this.tweens.add({targets:warden.body,scaleX:BOSS_PX*1.13,scaleY:BOSS_PX*.91,angle:-4,duration:180,yoyo:true,onComplete:()=>{if(warden.body.active)warden.body.angle=0;}});const roar=this.add.ellipse(warden.root.x,warden.root.y+FEET,70,22).setStrokeStyle(3,0xff925d,.85).setDepth(warden.root.y-1);this.fade(roar,520,{scale:2.5});}}
+  if(e.type==='summon'){const a=this.actors.get(e.target);if(a){const portal=this.add.ellipse(a.root.x,a.root.y+FEET,90,28,0xd94838,.28).setStrokeStyle(3,0xff8c65,.8).setDepth(a.root.y-1);this.fade(portal,650,{scale:1.8});this.popup(a.root.x,a.root.y+a.top-34,'ผู้คุ้มกัน','#ffb28b','#401518',17,true,e.target);}const boss=s.enemies.find(m=>m.boss),warden=boss&&this.actors.get(boss.id);if(warden){const step=95;warden.attackUntil=this.time.now+BOSS_ART.summonFrames*step+160;warden.body.angle=0;warden.body.setScale(BOSS_ART.scale);for(let i=0;i<BOSS_ART.summonFrames;i++)this.time.delayedCall(i*step,()=>{if(warden.body.active)warden.body.setTexture(bossTexture('summon',this.reduced?BOSS_ART.summonFrames-1:i));});}if(warden&&!this.reduced){const roar=this.add.ellipse(warden.root.x,warden.root.y+FEET,70,22).setStrokeStyle(3,0xff925d,.85).setDepth(warden.root.y-1);this.fade(roar,520,{scale:2.5});}}
  }
 }
