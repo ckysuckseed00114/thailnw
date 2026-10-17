@@ -85,12 +85,14 @@ Store.notify(state, events) → UIManager (HUD)  +  CatacombScene (วาด)  +
 | --- | --- |
 | `pnpm test` | ✅ 31/31 ผ่าน |
 | `pnpm build` (tsc strict + vite) | ✅ ผ่าน · Phaser chunk 1.2 MB / 332 KB gzip (มี warning chunk ใหญ่ ซึ่งเป็นเรื่องปกติ) |
-| ทดสอบในเบราว์เซอร์ | ยังไม่ได้รันซ้ำรอบนี้ (รอบก่อนผ่านตาม [VALIDATION.md](VALIDATION.md)) |
+| ทดสอบในเบราว์เซอร์ (port 5176, เซฟแยก) | ✅ เลือก Sword → สู้ → ข้ามห้อง → เข้า region 2 ได้ · desktop 1024×768 และ mobile 375×812 แสดงผลถูก · tab ใหม่ไม่มี console error |
 
 **เสร็จแล้ว:** core ครบทุกระบบ · HUD แบบ immersive · 5 อาชีพแบบ procedural pixel · ห้องเชื่อมต่อกันและเดินข้ามประตูได้ · Sword ใช้ sprite sheet จริง (อาชีพอื่นยังเป็น procedural) · เสียง Web Audio · เชื่อม PixelLab MCP แล้ว
 
 **ข้อสังเกต / ความเสี่ยง**
-- ยังไม่มี remote/backup นอกเครื่อง
+- ยังไม่มี remote/backup นอกเครื่อง (ยังไม่ได้ติดตั้ง `gh`)
+- เคยเจอบั๊กจอดำ: ถ้า Phaser boot ตอน `#game` มีขนาด 0 (เช่น tab เปิดอยู่เบื้องหลัง) WebGL จะ error `Framebuffer status: Incomplete Attachment` แล้วไม่ฟื้น ตอนนี้แก้แล้วใน `main.ts` ให้รอจน `#game` มีขนาดจริงก่อนสร้าง Phaser (ใช้ ResizeObserver) แต่กรณีขนาด 0 ยังไม่ได้ทดสอบซ้ำในเบราว์เซอร์
+- `.claude/launch.json` (`embermarch-dev`) รัน dev server ที่ port 5176 เพื่อให้ทดสอบโดยไม่ทับเซฟจริงที่ port 5173
 - โค้ดเขียนแบบอัดแน่นหนึ่งบรรทัดยาว (UIManager 22 KB, CatacombScene 19 KB, characters.css ทั้งไฟล์อยู่บรรทัดเดียว) ทำให้ diff/review ยาก ถ้าจะแก้ให้ใช้รูปแบบเดิม หรือตกลงกันก่อนว่าจะ format ใหม่
 - ไม่มี test ของ UI/renderer และไม่มี test ของ Web Lock
 - Marketplace มีปุ่มอยู่แต่ตั้งใจปิดไว้ (เงินจำลองเท่านั้น ห้ามผูกกับ wallet/token จริง ดูเหตุผลใน ARCHITECTURE.md)
@@ -125,5 +127,6 @@ Store.notify(state, events) → UIManager (HUD)  +  CatacombScene (วาด)  +
 
 ## 9. บันทึกการส่งต่อ (ใหม่สุดอยู่บน)
 
+- **2026-10-17 (2)** — smoke test ในเบราว์เซอร์ผ่าน · แก้บั๊กจอดำเมื่อ boot ตอน container มีขนาด 0 (`main.ts`) · เพิ่ม `.claude/launch.json` · PixelLab tools ต้องใช้ session ใหม่ถึงจะโหลด
 - **2026-10-17** — เชื่อม PixelLab MCP (`.mcp.json` + env `PIXELLAB_API_TOKEN`) · วิเคราะห์โครงสร้างแล้วสร้างเอกสารนี้ + `CLAUDE.md` · test 31/31 และ build ผ่าน · แก้ README/ARCHITECTURE ที่ข้อมูลเก่า (จำนวน test และเวลาข้ามห้อง) · ติดตั้ง Git, `git init`, baseline commit (ไม่มี token ใน repo, ignore `.pnpm-store`/`.env`)
 - **2026-10-16** — Sword sprite จริง · ห้องเชื่อมต่อกัน 6.5 วินาที · 5 อาชีพ · จัดระเบียบ repo · HUD แบบ immersive (ดู VALIDATION.md)
