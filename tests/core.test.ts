@@ -5,7 +5,7 @@ import {forgeCost,itemPower,monsterStats,salvageValue,sealCost,stats,xpForLevel}
 import {drop} from '../src/core/DropTable';
 import {offlineReward,resume} from '../src/core/AFKManager';
 import {validateSave} from '../src/services/Storage';
-import {CLASSES,type GameState} from '../src/core/models';
+import {CLASSES,MAX_CHEST,MAX_INVENTORY,type GameState} from '../src/core/models';
 const fixture=()=>{const s=createState(1700000000000,42);const e=new CombatEngine(s);e.dispatch({type:'class',value:'Sword'});return {s,e};};
 describe('balance contract',()=>{
  it('uses the specified base stats and XP curve',()=>{const s=createState();expect(stats(s)).toMatchObject({maxHp:100,damage:14,interval:600,crit:.1,critMult:1.8,block:.12,dodge:.3,lifeSteal:0});expect(xpForLevel(2)).toBe(250);expect(xpForLevel(3)).toBe(1160);expect(xpForLevel(4)).toBe(1346);});
@@ -26,6 +26,15 @@ describe('authority',()=>{
  it('claims milestone rewards once',()=>{const {s,e}=fixture();s.kills=10;e.dispatch({type:'quest',id:'first'});expect(s.lm).toBe(100);expect(()=>e.dispatch({type:'quest',id:'first'})).toThrow();});
  it('levels up repeatedly and refills health',()=>{const {s,e}=fixture();s.hero.hp=2;s.afk.xp=250+1160;e.dispatch({type:'afk'});expect(s.hero.level).toBe(3);expect(s.hero.points).toBe(2);expect(s.hero.xp).toBe(0);expect(s.hero.hp).toBe(stats(s).maxHp);});
  it('runs a sustained session without invalid state',()=>{const {s,e}=fixture();for(let i=0;i<720;i++){e.tick(5000);if(i%6===0){e.dispatch({type:'claim'});e.dispatch({type:'best'});}if(s.hero.points)e.dispatch({type:'allocate',value:'Vitality'});}expect(validateSave(s)).toBe(true);expect(s.kills).toBeGreaterThan(20);});
+});
+describe('bounded storage',()=>{
+ const fill=(s:GameState,list:'inventory'|'chest',n:number)=>{for(let i=0;i<n;i++)s[list].push(drop(s,1));};
+ it('claims only what fits and keeps the rest in the chest',()=>{const {s,e}=fixture();fill(s,'inventory',MAX_INVENTORY-2);fill(s,'chest',5);e.dispatch({type:'claim'});expect(s.inventory).toHaveLength(MAX_INVENTORY);expect(s.chest).toHaveLength(3);expect(()=>e.dispatch({type:'claim'})).toThrow();expect(s.chest).toHaveLength(3);});
+ it('claiming an empty chest with a full inventory is a no-op',()=>{const {s,e}=fixture();fill(s,'inventory',MAX_INVENTORY);expect(()=>e.dispatch({type:'claim'})).not.toThrow();});
+ it('salvages combat drops into Bone when the chest is full',()=>{const {s,e}=fixture();fill(s,'chest',MAX_CHEST);s.enemies.forEach(m=>{m.boss=true;m.hp=0;});const bone=s.bone;e.tick(50);expect(s.chest).toHaveLength(MAX_CHEST);expect(s.bone-bone).toBeGreaterThan(3*15);});
+ it('salvages AFK loot beyond chest capacity without losing value',()=>{const {s,e}=fixture();fill(s,'chest',MAX_CHEST-10);s.afk.loot=5000;e.dispatch({type:'afk'});expect(s.chest).toHaveLength(MAX_CHEST);expect(s.afk.loot).toBe(0);expect(s.bone).toBeGreaterThanOrEqual(4990*30);});
+ it('refuses a loot cache when the chest is full and keeps the gold',()=>{const {s,e}=fixture();fill(s,'chest',MAX_CHEST);s.lm=150;expect(()=>e.dispatch({type:'buy',offer:'cache'})).toThrow();expect(s.lm).toBe(150);});
+ it('still loads saves that exceed the caps',()=>{const {s}=fixture();fill(s,'inventory',MAX_INVENTORY+20);expect(validateSave(JSON.parse(JSON.stringify(s)))).toBe(true);});
 });
 describe('offline rewards and saves',()=>{
  function history(s:GameState){s.history=[{at:s.savedAt-1000,seconds:60,lm:60,xp:120,bone:30,loot:2}];}

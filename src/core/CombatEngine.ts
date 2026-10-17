@@ -1,4 +1,4 @@
-import {ATTRIBUTES,CLASSES,PETS,ROOMS,SKILLS,SLOTS,type Command,type GameEvent,type GameState,type Reward,type Shrine} from './models';
+import {ATTRIBUTES,CLASSES,MAX_CHEST,MAX_INVENTORY,PETS,ROOMS,SKILLS,SLOTS,type Command,type GameEvent,type GameState,type Item,type Reward,type Shrine} from './models';
 import {forgeCost,itemPower,monsterStats,petXp,regionIndex,salvageValue,sealCost,stats,xpForLevel} from './Formulas';
 import {drop,random} from './DropTable';
 import type {Authority} from './GameState';
@@ -10,6 +10,8 @@ export class CombatEngine implements Authority {
  private events:GameEvent[]=[];
  private note(text:string){this.state.log.unshift(text);this.state.log.length=Math.min(8,this.state.log.length);}
  private awardXP(xp:number){const s=this.state;s.hero.xp+=xp;while(s.hero.xp>=xpForLevel(s.hero.level+1)&&s.hero.level<1000){s.hero.xp-=xpForLevel(s.hero.level+1);s.hero.level++;s.hero.points++;s.hero.hp=stats(s).maxHp;this.note(`Level ${s.hero.level}. An attribute point awaits.`);}}
+ /** Returns false when the chest is full and the item was salvaged into Bone instead. */
+ private stash(item:Item){const s=this.state;if(s.chest.length<MAX_CHEST){s.chest.push(item);return true;}s.bone+=salvageValue(item);return false;}
  private record(reward:Reward,seconds=0){const s=this.state;const minute=Math.floor(s.now/60000)*60000;let h=s.history.find(h=>h.at===minute);if(!h){h={at:minute,seconds:0,lm:0,xp:0,bone:0,loot:0};s.history.push(h);}h.seconds+=seconds;for(const k of ['lm','xp','bone','loot'] as const)h[k]+=reward[k];s.history=s.history.filter(h=>h.at>=s.now-86400000);}
  private spawn(){
   const s=this.state;const boss=s.room===ROOMS;const m=monsterStats(regionIndex(s),boss);
@@ -28,7 +30,7 @@ export class CombatEngine implements Authority {
    s.kills++;if(e.boss)s.bosses++;
    const r=regionIndex(s),fortune=s.shrine?.kind==='Fortune'&&s.shrine.until>s.now?2:1;
    const reward={lm:(e.boss?45:8)*r*fortune,xp:(e.boss?100:18)*r,bone:(e.boss?15:3)*r,loot:0};
-   if(e.boss||random(s)<.24){for(let i=0;i<fortune;i++){s.chest.push(drop(s,r));reward.loot++;}}
+   if(e.boss||random(s)<.24){for(let i=0;i<fortune;i++){this.stash(drop(s,r));reward.loot++;}}
    s.lm+=reward.lm;s.bone+=reward.bone;this.awardXP(reward.xp);this.record(reward);
    if(e.boss){s.cleared=Math.max(s.cleared,r);s.unlocked=Math.max(s.unlocked,Math.min(s.floor*11,r+1));this.note(`Warden defeated. +${reward.lm} $LM · +${reward.xp} XP`);}
   }
@@ -68,7 +70,7 @@ export class CombatEngine implements Authority {
   if(c.type==='class'){check(CLASSES.includes(c.value),'Unknown class.');check(!s.started,'Your class is already chosen.');s.hero.class=c.value;s.started=true;this.spawn();return;}
   check(s.started,'Choose your class first.');
   if(c.type==='allocate'){check(ATTRIBUTES.includes(c.value)&&s.hero.points>0,'No attribute points available.');check(c.value!=='Vampirism'||s.hero.attributes.Vampirism<20,'Vampirism is capped at 20.');s.hero.points--;s.hero.attributes[c.value]++;}
-  else if(c.type==='claim'){s.inventory.push(...s.chest);s.chest=[];}
+  else if(c.type==='claim'){const room=MAX_INVENTORY-s.inventory.length;check(room>0||!s.chest.length,`Inventory is full (${MAX_INVENTORY}). Salvage gear to make room.`);s.inventory.push(...s.chest.splice(0,Math.max(0,room)));if(s.chest.length)this.note(`Inventory full · ${s.chest.length} items wait in the chest.`);}
   else if(c.type==='best'){for(const slot of SLOTS){const best=s.inventory.filter(i=>i.slot===slot).sort((a,b)=>itemPower(b)-itemPower(a))[0];if(best)s.equipped[slot]=best.id;}}
   else if(c.type==='equip'||c.type==='forge'||c.type==='salvage'||c.type==='lock'){
    const item=s.inventory.find(i=>i.id===c.id);check(item,'Item not found.');if(!item)return;
@@ -82,9 +84,9 @@ export class CombatEngine implements Authority {
   else if(c.type==='advance')s.autoAdvance=!s.autoAdvance;
   else if(c.type==='travel'){check(Number.isInteger(c.region)&&c.region>=1&&c.region<=s.unlocked,'Region is locked.');check(s.now>=s.travelAt,'Travel is cooling down.');check(!s.respawnAt,'Wait until you respawn.');s.floor=Math.floor((c.region-1)/11)+1;s.region=(c.region-1)%11+1;s.room=1;s.travelAt=s.now+1800000;this.spawn();}
   else if(c.type==='seal'){const next=Math.floor((s.unlocked-1)/11)+2;check(s.cleared>=(next-1)*11,'Defeat all 11 region bosses first.');const cost=sealCost(next);spend(cost.lm,cost.bone);s.floor=next;s.region=1;s.room=1;s.unlocked=(next-1)*11+1;s.respawnAt=0;s.hero.hp=stats(s).maxHp;this.spawn();}
-  else if(c.type==='afk'){s.lm+=s.afk.lm;s.bone+=s.afk.bone;this.awardXP(s.afk.xp);for(let i=0;i<s.afk.loot;i++)s.chest.push(drop(s,regionIndex(s)));s.afk={lm:0,xp:0,bone:0,loot:0,seconds:0};}
+  else if(c.type==='afk'){s.lm+=s.afk.lm;s.bone+=s.afk.bone;this.awardXP(s.afk.xp);let salvaged=0;for(let i=0;i<s.afk.loot;i++)if(!this.stash(drop(s,regionIndex(s))))salvaged++;if(salvaged)this.note(`Chest full · ${salvaged} idle finds salvaged into Bone.`);s.afk={lm:0,xp:0,bone:0,loot:0,seconds:0};}
   else if(c.type==='quest'){const q=QUESTS.find(q=>q.id===c.id);check(q&&!s.questClaims.includes(c.id),'Quest already claimed or missing.');if(q){check(s[q.metric]>=q.target,'Quest is not complete.');s.lm+=q.lm;s.bone+=q.bone;s.questClaims.push(c.id);}}
-  else if(c.type==='buy'){check(c.offer==='potion'||c.offer==='cache','Unknown offer.');if(c.offer==='potion'){check(!s.respawnAt&&s.hero.hp<stats(s).maxHp,'Potion unavailable at full health or while fallen.');spend(50,0);s.hero.hp=stats(s).maxHp;}else{spend(150,0);s.chest.push(drop(s,regionIndex(s)));}}
+  else if(c.type==='buy'){check(c.offer==='potion'||c.offer==='cache','Unknown offer.');if(c.offer==='potion'){check(!s.respawnAt&&s.hero.hp<stats(s).maxHp,'Potion unavailable at full health or while fallen.');spend(50,0);s.hero.hp=stats(s).maxHp;}else{check(s.chest.length<MAX_CHEST,'The loot chest is full. Claim it first.');spend(150,0);this.stash(drop(s,regionIndex(s)));}}
   s.hero.hp=Math.min(s.hero.hp,stats(s).maxHp);
  }
 }

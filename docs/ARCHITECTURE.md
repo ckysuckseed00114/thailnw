@@ -39,6 +39,7 @@ HTML input → Store.dispatch → Authority / CombatEngine
 | Progression | Auto advance can be toggled; region 11 repeats until the seal is opened |
 | Rewards | Normal: 8 LM / 18 XP / 3 Bone × region; boss: 45 / 100 / 15 × region |
 | Item chance | 24% per normal kill, guaranteed per boss |
+| Storage caps | Inventory 300, loot chest 150 (`MAX_INVENTORY`/`MAX_CHEST`). Drops and AFK loot that arrive at a full chest are auto-salvaged into Bone; Claim moves only what fits; the item cache cannot be bought into a full chest. Older saves above the cap still load. |
 | Rarity weights | 50%, 27%, 15%, 6%, 1.8%, 0.2% |
 | Item base power | round((3 + 2×region) × (1 + 0.65×rarityIndex)) |
 | Gear stats | Weapon/Ring/Amulet: damage; Helmet/Armor/Shield: 5×power HP; Boots: speed |

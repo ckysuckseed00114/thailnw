@@ -28,3 +28,6 @@ export interface GameEvent {type:'hit'|'skill'|'pet'|'death'|'room';target:numbe
 export const REGIONS = ['Stone Halls','Mossbound Vault','Flooded Depths','The Catacombs','Ember Passage','Crystal Hollow','Sunken Sanctum','Ashen Keep','Obsidian Gate','Hollow Throne','The Abyss'];
 export const SKILLS:Record<HeroClass,{name:string;mult:number}> = {Sword:{name:'Whirlwind',mult:2.15},Spear:{name:'Pierce',mult:2.6},Wand:{name:'Fireball',mult:2.7},Axe:{name:'Cleave',mult:3.1},Dagger:{name:'Shadow Step',mult:2}};
 export const ROOMS = 5;
+// Bounded storage keeps the LocalStorage save small; overflow drops are salvaged into Bone.
+export const MAX_INVENTORY = 300;
+export const MAX_CHEST = 150;
