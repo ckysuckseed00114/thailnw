@@ -4,8 +4,8 @@ import {CombatEngine} from '../src/core/CombatEngine';
 import {forgeCost,itemPower,monsterStats,salvageValue,sealCost,stats,xpForLevel} from '../src/core/Formulas';
 import {drop} from '../src/core/DropTable';
 import {offlineReward,resume} from '../src/core/AFKManager';
-import {validateSave} from '../src/services/Storage';
-import {CLASSES,MAX_CHEST,MAX_INVENTORY,type GameState} from '../src/core/models';
+import {migrateSave,validateSave} from '../src/services/Storage';
+import {CLASSES,DEFAULT_NAME,MAX_CHEST,MAX_INVENTORY,cleanName,type GameState} from '../src/core/models';
 const fixture=()=>{const s=createState(1700000000000,42);const e=new CombatEngine(s);e.dispatch({type:'class',value:'Sword'});return {s,e};};
 describe('balance contract',()=>{
  it('uses the specified base stats and XP curve',()=>{const s=createState();expect(stats(s)).toMatchObject({maxHp:100,damage:14,interval:600,crit:.1,critMult:1.8,block:.12,dodge:.3,lifeSteal:0});expect(xpForLevel(2)).toBe(250);expect(xpForLevel(3)).toBe(1160);expect(xpForLevel(4)).toBe(1346);});
@@ -35,6 +35,14 @@ describe('bounded storage',()=>{
  it('salvages AFK loot beyond chest capacity without losing value',()=>{const {s,e}=fixture();fill(s,'chest',MAX_CHEST-10);s.afk.loot=5000;e.dispatch({type:'afk'});expect(s.chest).toHaveLength(MAX_CHEST);expect(s.afk.loot).toBe(0);expect(s.bone).toBeGreaterThanOrEqual(4990*30);});
  it('refuses a loot cache when the chest is full and keeps the gold',()=>{const {s,e}=fixture();fill(s,'chest',MAX_CHEST);s.lm=150;expect(()=>e.dispatch({type:'buy',offer:'cache'})).toThrow();expect(s.lm).toBe(150);});
  it('still loads saves that exceed the caps',()=>{const {s}=fixture();fill(s,'inventory',MAX_INVENTORY+20);expect(validateSave(JSON.parse(JSON.stringify(s)))).toBe(true);});
+});
+describe('player names',()=>{
+ it('normalises valid names in any script and rejects the rest',()=>{expect(cleanName('  Lucky   Rohit ')).toBe('Lucky Rohit');expect(cleanName('ลักกี้')).toBe('ลักกี้');expect(cleanName("O'Brien-2")).toBe("O'Brien-2");for(const bad of ['','A','x'.repeat(17),'<b>hi</b>','-dash',' ',42,null])expect(cleanName(bad)).toBeNull();});
+ it('sets the name when the class is chosen, and refuses a bad one atomically',()=>{const a=createState();const e=new CombatEngine(a);expect(()=>e.dispatch({type:'class',value:'Axe',name:'!'})).toThrow();expect(a.started).toBe(false);expect(a.hero.name).toBe(DEFAULT_NAME);e.dispatch({type:'class',value:'Axe',name:' Rohit '});expect(a.hero.name).toBe('Rohit');expect(a.hero.class).toBe('Axe');});
+ it('keeps the default name when none is given',()=>{const {s}=fixture();expect(s.hero.name).toBe(DEFAULT_NAME);});
+ it('renames later and keeps the old name on invalid input',()=>{const {s,e}=fixture();e.dispatch({type:'name',value:'LuckyRohit'});expect(s.hero.name).toBe('LuckyRohit');expect(()=>e.dispatch({type:'name',value:'x'})).toThrow();expect(s.hero.name).toBe('LuckyRohit');expect(validateSave(JSON.parse(JSON.stringify(s)))).toBe(true);});
+ it('migrates version 1 saves to version 2 with the default name',()=>{const {s}=fixture();const old=JSON.parse(JSON.stringify(s));old.version=1;delete old.hero.name;expect(validateSave(old)).toBe(false);const migrated=migrateSave(old) as GameState;expect(migrated.version).toBe(2);expect(migrated.hero.name).toBe(DEFAULT_NAME);expect(migrated.hero.level).toBe(s.hero.level);expect(validateSave(migrated)).toBe(true);expect(old.version).toBe(1);});
+ it('leaves unknown versions for validation to reject',()=>{const odd={version:99,hero:{}};expect(migrateSave(odd)).toBe(odd);expect(validateSave(migrateSave(odd))).toBe(false);});
 });
 describe('offline rewards and saves',()=>{
  function history(s:GameState){s.history=[{at:s.savedAt-1000,seconds:60,lm:60,xp:120,bone:30,loot:2}];}

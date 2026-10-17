@@ -1,4 +1,4 @@
-import {ATTRIBUTES,CLASSES,MAX_CHEST,MAX_INVENTORY,PETS,ROOMS,SKILLS,SLOTS,type Command,type GameEvent,type GameState,type Item,type Reward,type Shrine} from './models';
+import {ATTRIBUTES,CLASSES,MAX_CHEST,MAX_INVENTORY,NAME_MAX,PETS,cleanName,ROOMS,SKILLS,SLOTS,type Command,type GameEvent,type GameState,type Item,type Reward,type Shrine} from './models';
 import {forgeCost,itemPower,monsterStats,petXp,regionIndex,salvageValue,sealCost,stats,xpForLevel} from './Formulas';
 import {drop,random} from './DropTable';
 import type {Authority} from './GameState';
@@ -67,8 +67,10 @@ export class CombatEngine implements Authority {
  dispatch(c:Command){
   const s=this.state;const check=(ok:unknown,message:string)=>{if(!ok)throw new Error(message);};
   const spend=(lm:number,bone:number)=>{check(s.lm>=lm&&s.bone>=bone,'Not enough $LM or Bone.');s.lm-=lm;s.bone-=bone;};
-  if(c.type==='class'){check(CLASSES.includes(c.value),'Unknown class.');check(!s.started,'Your class is already chosen.');s.hero.class=c.value;s.started=true;this.spawn();return;}
+  const named=(value:unknown)=>{const name=cleanName(value);check(name,`Names need 2–${NAME_MAX} letters or numbers (spaces, _ ' . - allowed).`);return name!;};
+  if(c.type==='class'){check(CLASSES.includes(c.value),'Unknown class.');check(!s.started,'Your class is already chosen.');const name=c.name===undefined?s.hero.name:named(c.name);s.hero.name=name;s.hero.class=c.value;s.started=true;this.spawn();return;}
   check(s.started,'Choose your class first.');
+  if(c.type==='name'){s.hero.name=named(c.value);return;}
   if(c.type==='allocate'){check(ATTRIBUTES.includes(c.value)&&s.hero.points>0,'No attribute points available.');check(c.value!=='Vampirism'||s.hero.attributes.Vampirism<20,'Vampirism is capped at 20.');s.hero.points--;s.hero.attributes[c.value]++;}
   else if(c.type==='claim'){const room=MAX_INVENTORY-s.inventory.length;check(room>0||!s.chest.length,`Inventory is full (${MAX_INVENTORY}). Salvage gear to make room.`);s.inventory.push(...s.chest.splice(0,Math.max(0,room)));if(s.chest.length)this.note(`Inventory full · ${s.chest.length} items wait in the chest.`);}
   else if(c.type==='best'){for(const slot of SLOTS){const best=s.inventory.filter(i=>i.slot===slot).sort((a,b)=>itemPower(b)-itemPower(a))[0];if(best)s.equipped[slot]=best.id;}}

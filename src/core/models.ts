@@ -14,8 +14,8 @@ export interface Enemy { id:number; name:string; hp:number; maxHp:number; damage
 export interface Reward { lm:number; xp:number; bone:number; loot:number }
 export interface Performance extends Reward { at:number; seconds:number }
 export interface GameState {
- version:1; rng:number; serial:number; now:number; savedAt:number; started:boolean;
- hero:{ class:HeroClass; level:number; xp:number; hp:number; points:number; attributes:Record<Attribute,number> };
+ version:2; rng:number; serial:number; now:number; savedAt:number; started:boolean;
+ hero:{ name:string; class:HeroClass; level:number; xp:number; hp:number; points:number; attributes:Record<Attribute,number> };
  lm:number; bone:number; inventory:Item[]; chest:Item[]; equipped:Partial<Record<Slot,number>>;
  floor:number; region:number; room:number; unlocked:number; cleared:number; autoAdvance:boolean; travelAt:number;
  enemies:Enemy[]; attackAt:number; skillAt:number; petAt:number; respawnAt:number; nextRoomAt:number;
@@ -23,7 +23,7 @@ export interface GameState {
  kills:number; bosses:number; questClaims:string[]; history:Performance[]; afk:Reward & {seconds:number};
  log:string[];
 }
-export type Command = {type:'class';value:HeroClass}|{type:'allocate';value:Attribute}|{type:'equip'|'forge'|'salvage'|'lock';id:number}|{type:'claim'|'best'|'seal'|'advance'|'afk'}|{type:'pet';value:Pet}|{type:'feed';amount:number}|{type:'travel';region:number}|{type:'quest';id:string}|{type:'buy';offer:'potion'|'cache'};
+export type Command = {type:'class';value:HeroClass;name?:string}|{type:'name';value:string}|{type:'allocate';value:Attribute}|{type:'equip'|'forge'|'salvage'|'lock';id:number}|{type:'claim'|'best'|'seal'|'advance'|'afk'}|{type:'pet';value:Pet}|{type:'feed';amount:number}|{type:'travel';region:number}|{type:'quest';id:string}|{type:'buy';offer:'potion'|'cache'};
 export interface GameEvent {type:'hit'|'skill'|'pet'|'death'|'room';target:number;amount?:number;critical?:boolean;label?:string}
 export const REGIONS = ['Stone Halls','Mossbound Vault','Flooded Depths','The Catacombs','Ember Passage','Crystal Hollow','Sunken Sanctum','Ashen Keep','Obsidian Gate','Hollow Throne','The Abyss'];
 export const SKILLS:Record<HeroClass,{name:string;mult:number}> = {Sword:{name:'Whirlwind',mult:2.15},Spear:{name:'Pierce',mult:2.6},Wand:{name:'Fireball',mult:2.7},Axe:{name:'Cleave',mult:3.1},Dagger:{name:'Shadow Step',mult:2}};
@@ -31,3 +31,10 @@ export const ROOMS = 5;
 // Bounded storage keeps the LocalStorage save small; overflow drops are salvaged into Bone.
 export const MAX_INVENTORY = 300;
 export const MAX_CHEST = 150;
+export const DEFAULT_NAME = 'Wanderer';
+export const NAME_MAX = 16;
+/** Normalises a player name, or returns null if it is not 2–16 letters, digits, spaces or _ ' . - (any script, e.g. Thai). */
+export function cleanName(value:unknown):string|null{
+ if(typeof value!=='string')return null;const name=value.normalize('NFC').replace(/\s+/g,' ').trim();const length=[...name].length;
+ return length>=2&&length<=NAME_MAX&&/^[\p{L}\p{N}][\p{L}\p{M}\p{N} _'.-]*$/u.test(name)?name:null;
+}

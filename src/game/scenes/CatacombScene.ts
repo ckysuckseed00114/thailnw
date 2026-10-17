@@ -3,7 +3,6 @@ import type {Store} from '../../core/GameState';
 import type {GameEvent,GameState} from '../../core/models';
 import {stats} from '../../core/Formulas';
 import {CLASSES} from '../../core/models';
-import {HERO_DESIGNS} from '../HeroArt';
 import {HAND_FROM_FEET,MONSTERS,heroSprite,monsterSprite,weaponSprite,type Sprite} from '../PixelSprites';
 import {ROOM_STRIDE,traversalPoint,traversalProgress} from '../../core/RoomTraversal';
 type Actor={root:Phaser.GameObjects.Container;body:Phaser.GameObjects.Sprite;weapon:Phaser.GameObjects.Container;bar:Phaser.GameObjects.Graphics;plate:Phaser.GameObjects.Text;top:number;hand:{x:number;y:number};attackUntil:number};
@@ -112,7 +111,7 @@ export class CatacombScene extends Phaser.Scene {
   if(s.respawnAt)this.traversal=null;
   if(s.nextRoomAt&&!this.traversal){this.tweens.killTweensOf(this.hero.root);this.traversal={x:this.hero.root.x,y:this.hero.root.y,until:s.nextRoomAt};}
   if(!this.hero.body.texture.key.startsWith(`hero-${s.hero.class}-`)){this.hero.body.setTexture(`hero-${s.hero.class}-0`);this.hero.top=FEET-heroSprite(s.hero.class).rows.length*PX;this.hero.weapon.removeAll(true);this.hero.weapon.add(this.add.image(0,0,`weapon-${s.hero.class}`).setOrigin(.5,.85).setScale(PX));}
-  this.hero.plate.setText(`${HERO_DESIGNS[s.hero.class].title} · Lv ${s.hero.level}`);
+  this.hero.plate.setText(`${s.hero.name} · Lv ${s.hero.level}`);
   if(s.respawnAt||this.lastHp<0)this.healed=0;else if(s.hero.hp>this.lastHp)this.healed+=s.hero.hp-this.lastHp;this.lastHp=s.respawnAt?-1:s.hero.hp;
   this.hero.root.setAlpha(s.respawnAt?.3:1);this.bar(this.hero,s.hero.hp/stats(s).maxHp,0x9bc9a2);
   s.enemies.forEach((e,i)=>{if(!this.actors.has(e.id))this.figure(e.id,this.journey*ROOM_STRIDE+780+i*125,420+(i%2)*100,e.boss,false,e.name);this.bar(this.actors.get(e.id)!,e.hp/e.maxHp,e.boss?0xe0604a:0x8eabb4);});
