@@ -25,7 +25,7 @@ describe('walking through a room hall by hall',()=>{
  it('walks into the next hall at move speed, then wakes its monsters',()=>{const {s,e}=hallFight();s.enemies[0].hp=0;e.tick(50);
   expect(s.hallAt-s.walkFrom).toBe(walkMs(HALL_WALK,BASE_MOVE_SPEED));expect(focusEnemy(s)).toBeUndefined();expect(s.nextRoomAt).toBe(0);
   const hp=s.hero.hp;e.tick(s.hallAt-s.now-50);expect(s.wave).toBe(0);expect(s.hero.hp).toBe(hp);
-  e.tick(50);expect(s.hallAt).toBe(0);expect(s.wave).toBe(1);expect(focusEnemy(s)?.wave).toBe(1);expect(s.enemies.every(m=>m.attackAt>=s.now+1200)).toBe(true);});
+  expect(e.tick(50).some(x=>x.type==='wake')).toBe(true);expect(s.hallAt).toBe(0);expect(s.wave).toBe(1);expect(focusEnemy(s)?.wave).toBe(1);expect(s.enemies.every(m=>m.attackAt>=s.now+1200)).toBe(true);});
  it('walks straight to the boss hall in the boss room',()=>{const {s,e}=hallFight();s.room=8;s.enemies=[];e.tick(50);expect(s.enemies[0].wave).toBe(1);expect(s.hallAt).toBeGreaterThan(s.now);
   e.tick(s.hallAt-s.now);expect(focusEnemy(s)?.boss).toBe(true);});
  it('keeps the hall walk over a save/resume and migrates v5 saves into one hall',()=>{const {s,e}=hallFight();s.enemies[0].hp=0;e.tick(50);s.savedAt=s.now;const left=s.hallAt-s.now;resume(s,s.now+60000);expect(s.hallAt-s.now).toBe(left);

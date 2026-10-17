@@ -33,7 +33,7 @@ export interface GameState {
 }
 export type Command = {type:'class';value:HeroClass;name?:string}|{type:'name';value:string}|{type:'allocate';value:Attribute}|{type:'equip'|'unequip'|'forge'|'salvage'|'lock';id:number}|{type:'claim'|'best'|'seal'|'advance'|'afk'}|{type:'pet';value:Pet}|{type:'feed';amount:number}|{type:'travel';region:number}|{type:'quest';id:string}|{type:'buy';offer:'potion'|'cache'}|{type:'cast';id:string}|{type:'autocast';id:string;value:boolean}|{type:'target';id:number};
 /** `log` carries a journal line; `skill` and skill hits carry the skill id and element for the HUD. */
-export interface GameEvent {type:'hit'|'skill'|'pet'|'death'|'room'|'summon'|'log';target:number;source?:number;amount?:number;critical?:boolean;label?:string;skill?:string;element?:string}
+export interface GameEvent {type:'hit'|'skill'|'pet'|'death'|'room'|'summon'|'wake'|'log';target:number;source?:number;amount?:number;critical?:boolean;label?:string;skill?:string;element?:string}
 export const REGIONS = ['Stone Halls','Mossbound Vault','Flooded Depths','The Catacombs','Ember Passage','Crystal Hollow','Sunken Sanctum','Ashen Keep','Obsidian Gate','Hollow Throne','The Abyss'];
 export const SKILLS:Record<HeroClass,{name:string;mult:number}> = {Sword:{name:'Whirlwind',mult:2.15},Spear:{name:'Pierce',mult:2.6},Wand:{name:'Fireball',mult:2.7},Axe:{name:'Cleave',mult:3.1},Dagger:{name:'Shadow Step',mult:2}};
 export const ROOMS = 8;

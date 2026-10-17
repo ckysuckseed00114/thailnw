@@ -34,6 +34,7 @@ export class CombatEngine implements Authority {
  private wake(){
   const s=this.state;s.hallAt=0;s.wave=Math.min(...s.enemies.map(e=>e.wave));s.attackAt=s.now+400;
   s.enemies.filter(e=>e.wave===s.wave).forEach((e,i)=>{e.attackAt=s.now+1200+i*400;});
+  this.events.push({type:'wake',target:0});
  }
  private strike(ids:number[],mult:number,from?:{skill:SkillDef;stunMs?:number}){
   const s=this.state;const st=stats(s);

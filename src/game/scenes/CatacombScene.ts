@@ -8,12 +8,12 @@ import {SWORD_ART,swordWalkPath,swordAttackPath} from '../SwordArt';
 import {AXE_ART,axeWalkPath,axeAttackPath} from '../AxeArt';
 import {SPEAR_ART,spearIdlePath,spearWalkPath,spearAttackPath} from '../SpearArt';
 import {BOSS_ART,bossFramePath,bossTexture} from '../BossArt';
-import {ROOM_ENTRY_X,ROOM_STRIDE,hallPoint,traversalPoint,traversalProgress} from '../../core/RoomTraversal';
+import {HALL_ENTRY_X,ROOM_ENTRY_X,ROOM_STRIDE,hallPoint,traversalPoint,traversalProgress} from '../../core/RoomTraversal';
 import {focusEnemy,isActive} from '../../core/Targeting';
 import type {Element} from '../../core/Skills';
 import {ELEMENT_COLOR} from '../../ui/theme/elements';
 import {prefs} from '../../ui/hud/prefs';
-type Actor={root:Phaser.GameObjects.Container;body:Phaser.GameObjects.Sprite;shadow:Phaser.GameObjects.Ellipse;weapon:Phaser.GameObjects.Container;bar:Phaser.GameObjects.Graphics;plate:Phaser.GameObjects.Text;ring:Phaser.GameObjects.Graphics;top:number;hand:{x:number;y:number};attackUntil:number;kind:string;phase:number;home:{x:number;y:number}};
+type Actor={root:Phaser.GameObjects.Container;body:Phaser.GameObjects.Sprite;shadow:Phaser.GameObjects.Ellipse;weapon:Phaser.GameObjects.Container;bar:Phaser.GameObjects.Graphics;plate:Phaser.GameObjects.Text;ring:Phaser.GameObjects.Graphics;top:number;hand:{x:number;y:number};attackUntil:number;kind:string;phase:number;home:{x:number;y:number};zz?:Phaser.GameObjects.Text};
 /** Enemies within this distance of the hero (world px) close in; farther ones keep to their own hall until engaged. */
 const AGGRO_RANGE=300;
 /** Longest gap (world px) the hero closes with a quick lunge; beyond it they walk in at move speed, and melee swings wait until in reach. */
@@ -25,7 +25,7 @@ const FEET=24,PX=4,ENEMY_PX=4.6,BOSS_PX=5.6,FONT='Silkscreen, "Courier New", mon
 const importedArt=(kind:HeroClass)=>kind==='Sword'?SWORD_ART:kind==='Axe'?AXE_ART:kind==='Spear'?SPEAR_ART:null;
 /** Presentation positions are independent of authoritative combat math. */
 export class CatacombScene extends Phaser.Scene {
- private actors=new Map<number,Actor>();private hero!:Actor;private pet!:Phaser.GameObjects.Container;private caption!:Phaser.GameObjects.Text;private warn!:Phaser.GameObjects.Graphics;private unsubscribe?:()=>void;private room='';
+ private actors=new Map<number,Actor>();private hero!:Actor;private pet!:Phaser.GameObjects.Container;private caption!:Phaser.GameObjects.Text;private warn!:Phaser.GameObjects.Graphics;private seal!:Phaser.GameObjects.Container;private unsubscribe?:()=>void;private room='';
  private reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
  private sections:{root:Phaser.GameObjects.Container;top:Phaser.GameObjects.Rectangle;bottom:Phaser.GameObjects.Rectangle}[]=[];
  private journey=0;private traversal:{x:number;y:number;from:number;until:number}|null=null;private hallWalk:{x:number;y:number}|null=null;private wasDead=false;private travelAt=0;private lastStateAt=0;
@@ -53,9 +53,10 @@ export class CatacombScene extends Phaser.Scene {
    const bottom=this.add.rectangle(1347,530,27,65,0x625b50).setOrigin(.5,1).setStrokeStyle(3,0xc1a06b);
    const children=this.children.list.filter(c=>!before.has(c));const root=this.add.container((i-1)*ROOM_STRIDE,0,children);this.sections.push({root,top,bottom});
   }
-  this.makeTextures();this.warn=this.add.graphics().setDepth(5);this.hero=this.figure(0,ROOM_ENTRY_X,465,false,true);
+  this.makeTextures();this.warn=this.add.graphics().setDepth(5);this.seal=this.makeSeal();this.hero=this.figure(0,ROOM_ENTRY_X,465,false,true);
   this.pet=this.add.container(ROOM_ENTRY_X-50,505,[this.add.ellipse(0,17,26,9,0x000000,.35),this.add.image(0,0,'companion').setScale(2.5)]);
-  this.caption=this.add.text(720,740,'',{fontFamily:FONT,fontSize:'14px',color:'#b8c7df',stroke:'#080d1c',strokeThickness:5,letterSpacing:2}).setOrigin(.5).setDepth(1000);
+  // Above the top wall: the bottom edge sits under the skill bar.
+  this.caption=this.add.text(720,182,'',{fontFamily:FONT,fontSize:'14px',color:'#b8c7df',stroke:'#080d1c',strokeThickness:5,letterSpacing:2}).setOrigin(.5).setDepth(1000);
   // Canvas text is rasterised once; redraw labels when the pixel font arrives.
   void document.fonts?.load(`16px ${FONT}`).then(()=>{if(this.hero?.plate.active){this.hero.plate.updateText();this.caption.updateText();}});
   this.resizeView();this.scale.on('resize',this.resizeView,this);
@@ -125,7 +126,7 @@ export class CatacombScene extends Phaser.Scene {
  }
  update(time:number,delta:number){
   if(!this.hero)return;const s=this.store.state,dt=Math.min(delta,50)/1000,foe=focusEnemy(s),target=foe&&this.actors.get(foe.id);
-  this.hero.root.setDepth(this.hero.root.y);const cam=this.cameras.main;const focus=this.scale.width<761||this.traversal?this.hero.root.x+70:this.journey*ROOM_STRIDE+750;cam.centerOn(Phaser.Math.Linear(cam.midPoint.x,focus,1-Math.exp(-dt*5)),450);
+  this.hero.root.setDepth(this.hero.root.y);const cam=this.cameras.main;const walking=!!this.traversal||!!this.hallWalk;const focus=this.scale.width<761||this.traversal?this.hero.root.x+(walking?170:70):this.journey*ROOM_STRIDE+750;cam.centerOn(Phaser.Math.Linear(cam.midPoint.x,focus,1-Math.exp(-dt*5)),450);
   if(this.traversal&&s.nextRoomAt&&!s.respawnAt){
    const progress=traversalProgress(s.now+Math.max(0,time-this.lastStateAt),this.traversal.from,this.traversal.until);const position=traversalPoint(this.traversal,this.journey*ROOM_STRIDE,progress);this.hero.root.setPosition(position.x,position.y);this.hero.attackUntil=0;this.walkPose(this.hero,time,1);this.caption.x=this.hero.root.x;
    this.sections[1].top.setScale(1,1-Math.min(1,progress/.12));this.sections[1].bottom.setScale(1,1-Math.min(1,progress/.12));
@@ -137,7 +138,7 @@ export class CatacombScene extends Phaser.Scene {
    // Sleeping waves keep to their hall; awake enemies hold position until the hero targets them or comes close.
    if(!isActive(s,e)||!e.boss&&e.id!==foe?.id&&Phaser.Math.Distance.Between(a.root.x,a.root.y,this.hero.root.x,this.hero.root.y)>AGGRO_RANGE){const hx=a.home.x+Math.sin((time+a.phase)/1300)*16,hy=a.home.y+Math.cos((time+a.phase)/1700)*8;if(Phaser.Math.Distance.Between(a.root.x,a.root.y,hx,hy)>6)this.move(a,hx,hy,dt,time,18);else this.idle(a,time);this.anticipate(a,e,s,time);continue;}const gap=e.boss?112:a.kind==='Cave Stalker'?88:78;const weave=e.boss?10:a.kind==='Cave Stalker'?29:a.kind==='Mossling'?17:8;const y=Phaser.Math.Clamp(this.hero.root.y+Math.sin((time+a.phase)/(e.boss?780:540))*weave,400,535);const x=this.hero.root.x+gap+Math.sin((time+a.phase)/920)*(e.boss?7:12);const speed=e.boss?36:a.kind==='Cave Stalker'?56:a.kind==='Mossling'?44:29;if(Phaser.Math.Distance.Between(a.root.x,a.root.y,x,y)>gap*.18&&e.stunnedUntil<s.now)this.move(a,x,y,dt,time,speed);else this.idle(a,time);this.anticipate(a,e,s,time);}}else this.idle(this.hero,time);
   this.pet.x=Phaser.Math.Linear(this.pet.x,this.hero.root.x-62,Math.min(1,dt*4));this.pet.y=Phaser.Math.Linear(this.pet.y,this.hero.root.y+12,Math.min(1,dt*4));this.pet.setDepth(this.pet.y);const body=this.pet.list[1] as Phaser.GameObjects.Image;body.setTint(s.pet==='Emberkit'?0xff9d59:s.pet==='Shellby'?0x8ac9ef:s.pet==='Craboulder'?0xc8b0a0:0xffffff);body.y=this.reduced?0:Math.sin(time/150)*2;
-  this.telegraph(s,time);
+  this.telegraph(s,time);this.sealState(s,time);
   if(this.healed>=1&&time-this.healShownAt>450){this.popup(this.hero.root.x+18,this.hero.root.y+this.hero.top-4,`+${Math.round(this.healed)}`,'#7dff8a','#0d3315',17,true,-2);this.healed=0;this.healShownAt=time;}
  }
  /** Standing distance in front of a target; the boss sprite is much wider than regular monsters. */
@@ -182,6 +183,25 @@ export class CatacombScene extends Phaser.Scene {
   if(e.boss){a.body.setTexture(this.bossWindup(p));a.body.setScale(base);return;}
   a.body.y+=3*p;a.body.setScale(base*(1+.04*p),base*(1-.07*p));a.weapon.angle=face*(22-70*p);
  }
+ /** Rune seal across the passage into the right hall: crossing it is what wakes the hall's monsters. */
+ private makeSeal(){
+  const g=this.add.graphics();g.fillStyle(0x7fd8ff,.1).fillRect(-10,352,20,224).fillStyle(0x7fd8ff,.35).fillRect(-2,352,4,224);
+  for(let y=366;y<576;y+=30){g.fillStyle(0x0b1530,.9).fillPoints([{x:0,y:y-9},{x:9,y},{x:0,y:y+9},{x:-9,y}],true);g.lineStyle(2,0x9fe4ff,.95).strokePoints([{x:0,y:y-9},{x:9,y},{x:0,y:y+9},{x:-9,y}],true);g.fillStyle(0xdffaff).fillRect(-2,y-2,4,4);}
+  return this.add.container(HALL_ENTRY_X-24,0,[g]).setDepth(4).setVisible(false);
+ }
+ /** Dim while the next hall sleeps; brightens as the hero walks up to it. Hidden once every hall is awake. */
+ private sealState(s:GameState,time:number){
+  const show=s.started&&!s.respawnAt&&!s.nextRoomAt&&s.enemies.some(e=>!isActive(s,e));this.seal.setVisible(show);if(!show)return;
+  this.seal.x=this.journey*ROOM_STRIDE+HALL_ENTRY_X-24;
+  const p=s.hallAt?traversalProgress(s.now+Math.max(0,time-this.lastStateAt),s.walkFrom,s.hallAt):0,pulse=this.reduced?0:Math.sin(time/(s.hallAt?140:520));
+  this.seal.setAlpha(s.hallAt?.55+.4*p+.05*pulse:.32+.08*pulse);
+ }
+ /** Sleeping enemies are dimmed with a drifting "z"; waking clears both. */
+ private sleep(a:Actor,asleep:boolean){
+  if(asleep&&!a.zz){a.body.setTint(0x7c87ad);a.zz=this.add.text(32,a.top-40,'z',{fontFamily:FONT,fontSize:'22px',fontStyle:'bold',color:'#d4ddff',stroke:'#0b1020',strokeThickness:5}).setOrigin(.5);a.root.add(a.zz);}
+  else if(!asleep&&a.zz){a.zz.destroy();a.zz=undefined;a.body.clearTint();}
+  if(a.zz&&!this.reduced){const t=((this.time.now+a.phase)%1800)/1800;a.zz.setPosition(32+t*10,a.top-40-t*22).setAlpha(1-t).setText(t<.5?'z':'Z');}
+ }
  private bossWindup(p:number){return bossTexture('slam',Math.min(BOSS_ART.slamImpact-1,Math.floor(p*BOSS_ART.slamImpact)));}
  /** Boss attack: the fists come down through the impact frames, then it settles back to idle. */
  private bossStrike(a:Actor,heavy:boolean){
@@ -208,8 +228,8 @@ export class CatacombScene extends Phaser.Scene {
   this.hero.plate.setText(`${s.hero.name} · Lv ${s.hero.level}`);
   if(s.respawnAt||this.lastHp<0)this.healed=0;else if(s.hero.hp>this.lastHp)this.healed+=s.hero.hp-this.lastHp;this.lastHp=s.respawnAt?-1:s.hero.hp;
   this.hero.root.setAlpha(s.respawnAt?.3:1);this.bar(this.hero,s.hero.hp/stats(s).maxHp,0x9bc9a2);
-  s.enemies.forEach((e,i)=>{if(!this.actors.has(e.id)){const at=this.spawnSpot(e,s.enemies.filter(m=>m.wave===e.wave&&m.id<e.id).length);this.figure(e.id,at.x,at.y,e.boss,false,e.name);}const a=this.actors.get(e.id)!;this.bar(a,e.hp/e.maxHp,e.boss?0xe0604a:0x8eabb4);a.ring.setVisible(s.target===e.id);});
-  this.caption.setText(s.respawnAt?`FALLEN · RETURNING IN ${Math.ceil((s.respawnAt-s.now)/1000)}s`:s.nextRoomAt?'GATE OPEN  ·  ENTERING THE NEXT CHAMBER':'');
+  s.enemies.forEach((e,i)=>{if(!this.actors.has(e.id)){const at=this.spawnSpot(e,s.enemies.filter(m=>m.wave===e.wave&&m.id<e.id).length);this.figure(e.id,at.x,at.y,e.boss,false,e.name);}const a=this.actors.get(e.id)!;this.bar(a,e.hp/e.maxHp,e.boss?0xe0604a:0x8eabb4);a.ring.setVisible(s.target===e.id);this.sleep(a,!isActive(s,e));});
+  this.caption.setText(s.respawnAt?`FALLEN · RETURNING IN ${Math.ceil((s.respawnAt-s.now)/1000)}s`:s.nextRoomAt?'GATE OPEN  ·  ENTERING THE NEXT CHAMBER':s.hallAt?'CROSSING INTO THE NEXT HALL':'');
   for(const e of events)this.effect(e,s);const ids=new Set(s.enemies.map(e=>e.id));for(const [id,a] of this.actors)if(id&&!ids.has(id)){this.actors.delete(id);this.time.delayedCall(330,()=>{if(a.root.active)this.tweens.add({targets:a.root,alpha:0,y:a.root.y+10,duration:300,onComplete:()=>{this.tweens.killTweensOf(a.weapon);a.root.destroy();}});});}
  }
  private bar(a:Actor,f:number,c:number){const y=a.top-10;a.bar.clear().fillStyle(0x0a0710).fillRect(-25,y,50,6).fillStyle(0x3a2230).fillRect(-24,y+1,48,4).fillStyle(c).fillRect(-24,y+1,48*Math.max(0,Math.min(1,f)),4);}
@@ -296,6 +316,11 @@ export class CatacombScene extends Phaser.Scene {
    if(!s.nextRoomAt&&s.hero.class!=='Wand'&&e.target!==0&&this.hero.attackUntil<this.time.now&&gap>100&&gap<=DASH_MAX){const side=target.root.x>=this.hero.root.x?1:-1,dur=Math.round(Math.min(260,gap*1.1));this.walkPose(this.hero,this.time.now,side);this.hero.attackUntil=this.time.now+dur+20;this.tweens.add({targets:this.hero.root,x:target.root.x-side*this.reach(s,!!s.enemies.find(m=>m.id===e.target)?.boss),y:target.root.y,duration:dur,ease:'Sine.easeOut',onComplete:impact});}else impact();
   }
   if(e.type==='skill'){const dest=this.actors.get(e.target)||this.hero;const tint=Number.parseInt((e.element?ELEMENT_COLOR[e.element as Element].fill:'#f1cf88').slice(1),16);const ring=this.add.circle(this.hero.root.x,this.hero.root.y+FEET,25,tint,.05).setStrokeStyle(3,tint,.85).setDepth(900);this.tweens.add({targets:ring,scale:s.hero.class==='Sword'?5:3,alpha:0,duration:500,onComplete:()=>ring.destroy()});if(s.hero.class==='Wand'){const bolt=this.add.circle(this.hero.root.x,this.hero.root.y-10,9,0xffb661).setDepth(1000);this.tweens.add({targets:bolt,x:dest.root.x,y:dest.root.y,duration:240,onComplete:()=>bolt.destroy()});}this.popup(this.hero.root.x,this.hero.root.y+this.hero.top-22,(e.label||'').toUpperCase(),'#f8d88c','#161927',15,true,-1);if(e.element)this.castVfx(e.element as Element);}
+  if(e.type==='wake'){
+   const x=this.journey*ROOM_STRIDE+HALL_ENTRY_X-24,flash=this.add.rectangle(x,464,26,232,0xbff0ff,.55).setDepth(900);this.fade(flash,420,{scaleX:4});
+   for(const m of s.enemies){const a=this.actors.get(m.id);if(!a||!isActive(s,m))continue;this.sleep(a,false);this.popup(a.root.x,a.root.y+a.top-24,'!','#ffd34d','#3a1d0e',26,true,m.id);
+    if(!this.reduced)this.tweens.add({targets:a.body,y:FEET-14,duration:120,yoyo:true,ease:'Sine.easeOut',onComplete:()=>{if(a.body.active)a.body.y=FEET;}});}
+  }
   if(e.type==='pet'){const ring=this.add.circle(this.pet.x,this.pet.y,15).setStrokeStyle(2,0xa4e2a2,.8).setDepth(950);this.tweens.add({targets:ring,scale:3,alpha:0,duration:600,onComplete:()=>ring.destroy()});}
   if(e.type==='summon'){const a=this.actors.get(e.target);if(a){const portal=this.add.ellipse(a.root.x,a.root.y+FEET,90,28,0xd94838,.28).setStrokeStyle(3,0xff8c65,.8).setDepth(a.root.y-1);this.fade(portal,650,{scale:1.8});this.popup(a.root.x,a.root.y+a.top-34,'ผู้คุ้มกัน','#ffb28b','#401518',17,true,e.target);}const boss=s.enemies.find(m=>m.boss),warden=boss&&this.actors.get(boss.id);if(warden){const step=95;warden.attackUntil=this.time.now+BOSS_ART.summonFrames*step+160;warden.body.angle=0;warden.body.setScale(BOSS_ART.scale);for(let i=0;i<BOSS_ART.summonFrames;i++)this.time.delayedCall(i*step,()=>{if(warden.body.active)warden.body.setTexture(bossTexture('summon',this.reduced?BOSS_ART.summonFrames-1:i));});}if(warden&&!this.reduced){const roar=this.add.ellipse(warden.root.x,warden.root.y+FEET,70,22).setStrokeStyle(3,0xff925d,.85).setDepth(warden.root.y-1);this.fade(roar,520,{scale:2.5});}}
  }

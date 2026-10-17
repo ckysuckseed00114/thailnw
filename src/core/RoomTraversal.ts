@@ -1,8 +1,11 @@
 // Authority and renderer share the walk timing; no client acknowledgement can skip combat.
 /** Base walking speed in world px/s. Walk durations come from distance ÷ stats().moveSpeed, so faster heroes clear rooms sooner. */
 export const BASE_MOVE_SPEED=230;
-/** Path lengths the core times walks by: left-hall fight → right-hall entry, and right hall → the next room's entry. */
-export const HALL_WALK=460;
+/**
+ * Path lengths the core times walks by: left-hall fight → right-hall entry, and right hall → the next room's entry.
+ * HALL_WALK matches where the left-hall fight usually ends (x≈390), so the drawn walk moves at about moveSpeed.
+ */
+export const HALL_WALK=400;
 export const ROOM_WALK=690;
 export const walkMs=(distance:number,speed:number)=>Math.round(distance/Math.max(1,speed)*1000);
 /** Room-to-room walk at base speed (3s). */
