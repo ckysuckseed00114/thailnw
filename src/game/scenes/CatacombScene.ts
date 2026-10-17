@@ -16,6 +16,8 @@ import {prefs} from '../../ui/hud/prefs';
 type Actor={root:Phaser.GameObjects.Container;body:Phaser.GameObjects.Sprite;shadow:Phaser.GameObjects.Ellipse;weapon:Phaser.GameObjects.Container;bar:Phaser.GameObjects.Graphics;plate:Phaser.GameObjects.Text;ring:Phaser.GameObjects.Graphics;top:number;hand:{x:number;y:number};attackUntil:number;kind:string;phase:number;home:{x:number;y:number}};
 /** Enemies within this distance of the hero (world px) close in; farther ones keep to their own hall until engaged. */
 const AGGRO_RANGE=300;
+/** Longest gap (world px) the hero closes with a quick lunge; beyond it they run, and melee swings wait until in reach. */
+const DASH_MAX=240;
 /** Feet sit on this line inside every actor container; pixel sprites are anchored to it. */
 /** Routine (non-important) damage numbers are skipped beyond this many on screen. */
 const POPUP_CAP=28;
@@ -127,7 +129,7 @@ export class CatacombScene extends Phaser.Scene {
   if(this.traversal&&s.nextRoomAt&&!s.respawnAt){
    const progress=traversalProgress(s.now+Math.max(0,time-this.lastStateAt),this.traversal.until);const position=traversalPoint(this.traversal,this.journey*ROOM_STRIDE,progress);this.hero.root.setPosition(position.x,position.y);this.hero.attackUntil=0;this.walkPose(this.hero,time,1);this.caption.x=this.hero.root.x;
    this.sections[1].top.setScale(1,1-Math.min(1,progress/.12));this.sections[1].bottom.setScale(1,1-Math.min(1,progress/.12));
-  }else if(s.started&&!s.respawnAt){if(target&&foe){const side=target.root.x>=this.hero.root.x?1:-1;this.move(this.hero,target.root.x-side*this.reach(s,foe.boss),target.root.y,dt,time,235);}for(const e of s.enemies){const a=this.actors.get(e.id);if(!a||a.attackUntil>time)continue;
+  }else if(s.started&&!s.respawnAt){if(target&&foe){const side=target.root.x>=this.hero.root.x?1:-1;const far=Phaser.Math.Distance.Between(this.hero.root.x,this.hero.root.y,target.root.x,target.root.y)>DASH_MAX;this.move(this.hero,target.root.x-side*this.reach(s,foe.boss),target.root.y,dt,time,far?430:235);}for(const e of s.enemies){const a=this.actors.get(e.id);if(!a||a.attackUntil>time)continue;
    // Enemies hold their own hall until the hero targets them or comes close, so the fight sweeps through the room.
    if(!e.boss&&e.id!==foe?.id&&Phaser.Math.Distance.Between(a.root.x,a.root.y,this.hero.root.x,this.hero.root.y)>AGGRO_RANGE){const hx=a.home.x+Math.sin((time+a.phase)/1300)*16,hy=a.home.y+Math.cos((time+a.phase)/1700)*8;if(Phaser.Math.Distance.Between(a.root.x,a.root.y,hx,hy)>6)this.move(a,hx,hy,dt,time,18);else this.idle(a,time);this.anticipate(a,e,s,time);continue;}const gap=e.boss?112:a.kind==='Cave Stalker'?88:78;const weave=e.boss?10:a.kind==='Cave Stalker'?29:a.kind==='Mossling'?17:8;const y=Phaser.Math.Clamp(this.hero.root.y+Math.sin((time+a.phase)/(e.boss?780:540))*weave,400,535);const x=this.hero.root.x+gap+Math.sin((time+a.phase)/920)*(e.boss?7:12);const speed=e.boss?36:a.kind==='Cave Stalker'?56:a.kind==='Mossling'?44:29;if(Phaser.Math.Distance.Between(a.root.x,a.root.y,x,y)>gap*.18&&e.stunnedUntil<s.now)this.move(a,x,y,dt,time,speed);else this.idle(a,time);this.anticipate(a,e,s,time);}}else this.idle(this.hero,time);
   this.pet.x=Phaser.Math.Linear(this.pet.x,this.hero.root.x-62,Math.min(1,dt*4));this.pet.y=Phaser.Math.Linear(this.pet.y,this.hero.root.y+12,Math.min(1,dt*4));this.pet.setDepth(this.pet.y);const body=this.pet.list[1] as Phaser.GameObjects.Image;body.setTint(s.pet==='Emberkit'?0xff9d59:s.pet==='Shellby'?0x8ac9ef:s.pet==='Craboulder'?0xc8b0a0:0xffffff);body.y=this.reduced?0:Math.sin(time/150)*2;
@@ -272,7 +274,10 @@ export class CatacombScene extends Phaser.Scene {
   else if(el==='shadow'){const ghost=this.add.sprite(x,y+FEET,h.body.texture.key).setOrigin(.5,1).setScale(h.body.scaleX).setFlipX(h.body.flipX).setTint(0x8a5cff).setAlpha(.45).setDepth(y-1);this.fade(ghost,360,{x:x-18*(h.body.flipX?-1:1)});}
  }
  private effect(e:GameEvent,s:GameState){
-  const target=this.actors.get(e.target);if(e.type==='hit'&&target){const attacker=e.target===0?this.actors.get(e.source??s.enemies[0]?.id):this.hero;const impact=()=>{if(!target.root.active)return;if(attacker?.root.active)this.swing(attacker,target,!!e.critical,e.label==='SLAM');
+  const target=this.actors.get(e.target);if(e.type==='hit'&&target){const attacker=e.target===0?this.actors.get(e.source??s.enemies[0]?.id):this.hero;
+   // Melee swings only play within reach; a hit the authority lands from across the room still shows its number.
+   const melee=attacker!==this.hero||s.hero.class!=='Wand',inReach=()=>!!attacker&&(!melee||Phaser.Math.Distance.Between(attacker.root.x,attacker.root.y,target.root.x,target.root.y)<=DASH_MAX);
+   const impact=()=>{if(!target.root.active)return;if(attacker?.root.active&&inReach())this.swing(attacker,target,!!e.critical,e.label==='SLAM');
     const y=target.root.y+target.top-6,x=target.root.x+(Math.random()-.5)*16,key=e.target;
     const elem=e.element?ELEMENT_COLOR[e.element as Element]:null,boss=!!s.enemies.find(m=>m.id===e.target)?.boss;
     if(e.label==='SLAM')this.popup(x,y,e.amount?`SLAM -${e.amount}`:'SLAM','#ff6a4d','#3a0f12',18,true,key);
@@ -281,7 +286,9 @@ export class CatacombScene extends Phaser.Scene {
     else if(e.critical)this.popup(x,y-6,`${e.amount}!`,elem?elem.fill:'#ffd34d',elem?elem.stroke:'#3a1d0e',34,true,key);
     else this.popup(x,y,`${e.amount}`,elem?elem.fill:'#fff4d6',elem?elem.stroke:'#2a1a14',elem?24:21,!!elem||boss,key);
     this.feedback(e,target);};
-   if(!s.nextRoomAt&&s.hero.class!=='Wand'&&e.target!==0&&this.hero.attackUntil<this.time.now&&Phaser.Math.Distance.Between(this.hero.root.x,this.hero.root.y,target.root.x,target.root.y)>100){this.walkPose(this.hero,this.time.now,target.root.x>=this.hero.root.x?1:-1);this.hero.attackUntil=this.time.now+220;this.tweens.add({targets:this.hero.root,x:target.root.x-this.reach(s,!!s.enemies.find(m=>m.id===e.target)?.boss),y:target.root.y,duration:200,ease:'Sine.easeOut',onComplete:impact});}else impact();
+   // Short lunge only: farther targets are reached by running in update(), never by a teleport-like dash.
+   const gap=Phaser.Math.Distance.Between(this.hero.root.x,this.hero.root.y,target.root.x,target.root.y);
+   if(!s.nextRoomAt&&s.hero.class!=='Wand'&&e.target!==0&&this.hero.attackUntil<this.time.now&&gap>100&&gap<=DASH_MAX){const side=target.root.x>=this.hero.root.x?1:-1,dur=Math.round(Math.min(260,gap*1.1));this.walkPose(this.hero,this.time.now,side);this.hero.attackUntil=this.time.now+dur+20;this.tweens.add({targets:this.hero.root,x:target.root.x-side*this.reach(s,!!s.enemies.find(m=>m.id===e.target)?.boss),y:target.root.y,duration:dur,ease:'Sine.easeOut',onComplete:impact});}else impact();
   }
   if(e.type==='skill'){const dest=this.actors.get(e.target)||this.hero;const tint=Number.parseInt((e.element?ELEMENT_COLOR[e.element as Element].fill:'#f1cf88').slice(1),16);const ring=this.add.circle(this.hero.root.x,this.hero.root.y+FEET,25,tint,.05).setStrokeStyle(3,tint,.85).setDepth(900);this.tweens.add({targets:ring,scale:s.hero.class==='Sword'?5:3,alpha:0,duration:500,onComplete:()=>ring.destroy()});if(s.hero.class==='Wand'){const bolt=this.add.circle(this.hero.root.x,this.hero.root.y-10,9,0xffb661).setDepth(1000);this.tweens.add({targets:bolt,x:dest.root.x,y:dest.root.y,duration:240,onComplete:()=>bolt.destroy()});}this.popup(this.hero.root.x,this.hero.root.y+this.hero.top-22,(e.label||'').toUpperCase(),'#f8d88c','#161927',15,true,-1);if(e.element)this.castVfx(e.element as Element);}
   if(e.type==='pet'){const ring=this.add.circle(this.pet.x,this.pet.y,15).setStrokeStyle(2,0xa4e2a2,.8).setDepth(950);this.tweens.add({targets:ring,scale:3,alpha:0,duration:600,onComplete:()=>ring.destroy()});}
