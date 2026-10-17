@@ -114,6 +114,7 @@ Store.notify(state, events) → UIManager (HUD)  +  CatacombScene (วาด)  +
 
 | ไฟล์ | เนื้อหา |
 | --- | --- |
+| [HANDOFF_UIUX_CHATGPT.md](HANDOFF_UIUX_CHATGPT.md) | ★ เอกสารส่งต่องาน UI/UX ให้ AI/ทีมอื่น (อ่านเข้าใจได้โดยไม่ต้องมีบริบทอื่น) |
 | [UI_UX_PLAN.md](UI_UX_PLAN.md) | ★ แผน UI/UX ธีม Thai Fantasy: แยก component, 4 เฟส, รหัสงาน 1.1–4.7, ข้อตัดสินใจ U1–U6 |
 | [ONLINE_PLAN.md](ONLINE_PLAN.md) | ★ แผนเปลี่ยนเป็นเกมออนไลน์: ตัด NFT/Token, Balance v2 (ตัวเลข baseline จาก sim), UI/UX ใหม่, สถาปัตยกรรม server, roadmap, ข้อตัดสินใจ D1–D8 |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | ขอบเขตแต่ละชั้น, สูตรทั้งหมด, ค่า balance, แนวทางย้ายขึ้น server |
@@ -136,6 +137,7 @@ Store.notify(state, events) → UIManager (HUD)  +  CatacombScene (วาด)  +
 
 ## 9. บันทึกการส่งต่อ (ใหม่สุดอยู่บน)
 
+- **2026-10-17 (12)** — ส่งต่องาน UI/UX ให้ ChatGPT: [HANDOFF_UIUX_CHATGPT.md](HANDOFF_UIUX_CHATGPT.md) (มี prompt พร้อมวาง, สถาปัตยกรรม UI, กติกา, core API, งานที่เสร็จ/เหลือ, วิธีตรวจ) + `handoff/embermarch-uiux-handoff.zip` (สร้างใหม่ได้, ไม่ commit) · งานต่อไปของผู้รับคือ Phase 3 เริ่มที่ 3.1–3.3
 - **2026-10-17 (11)** — UI/UX Phase 2 ครบ (2.3–2.5): เลือกเป้าหมายได้ (คลิกศัตรู / T / X) ซึ่งใช้กับการตีปกติ สกิลเป้าเดี่ยว และสัตว์เลี้ยง · ถ้าไม่เลือกจะทำงานแบบเดิมทุกอย่าง · save v4 · Target frame + Boss bar ใหม่ (ระยะ + ตัวนับทุบหนัก) แทน boss-hud เดิม · ป้ายชื่อศัตรู · hit flash / knockback / สั่นจอ (ปิดได้) / VFX ตามธาตุ · ระบบปุ่มลัดกลาง + หน้าต่างเปลี่ยนปุ่ม (บันทึกเฉพาะที่เปลี่ยน) · มือถือ: แชตกับ tracker เปิดได้ทีละอัน · hook debug `window.__embermarch` (มีแค่ตอน dev) · test 101 · ตรวจไม่ทับกันครบทุกขนาด
 - **2026-10-17 (10)** — UI/UX 2.1 / 2.2 / 2.6: **ระบบสกิลใหม่ใน core** (6 สกิล/คลาส, คูลดาวน์แยกต่อสกิล, `cast`/`autocast`, save v3 + backup-v2) · event จาก `dispatch` ไม่หายแล้ว (`tick` คืน event ที่สะสมไว้) · core บอกเหตุผลที่หลบได้ DODGE/SHIELD/BLOCK โดยลำดับการสุ่มเหมือนเดิม · Hotbar (ปุ่ม 1–5/R + auto + เดินหน้าอัตโนมัติ แทน battle-footer เดิม) · ตัวเลขดาเมจตามธาตุ + ตั้งค่า + จำกัดจำนวน · กล่องแชต/ระบบแบบแท็บ · toast ย้ายขึ้นไม่ทับ hotbar · ตรวจไม่ทับกันที่ 375/768/1024/1280/1920 · test 88 · **balance sim (seed เดียว):** ความเร็วโดยรวมใกล้เดิม แต่ Sword ตายเพิ่มจาก 901 เป็น 1,809 ครั้งใน 12 ชม. และ Axe แซงคลาสอื่น (region 26 vs 21–23 ใน 3 ชม.) → ต้องจูนใน Balance v2
 - **2026-10-17 (9)** — UI/UX Phase 1 ครบ (1.4–1.6): Quest tracker (ย่อได้, คลิกเปิดสมุดภารกิจ, มือถือเริ่มแบบย่อ) · Top bar ชื่อพื้นที่ + ตั้งค่าด่วน (ขนาด UI 90–125%, เสียง, เต็มจอ) · Purse · HUD เปลี่ยนเป็น CSS grid + safe area (`viewport-fit=cover`) · ซ่อน DOM เดิม (dungeon-title, header, room-objective, shrine-card) · ตรวจไม่ทับกันที่ 375/768/1280/1920 ทั้งที่ 100% และ 125% · test 69 · JS app 100 KB (38 KB gzip)
