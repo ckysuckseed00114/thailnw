@@ -1,0 +1,30 @@
+export const CLASSES = ['Sword','Spear','Wand','Axe','Dagger'] as const;
+export type HeroClass = typeof CLASSES[number];
+export const SLOTS = ['Weapon','Helmet','Armor','Shield','Boots','Ring','Amulet'] as const;
+export type Slot = typeof SLOTS[number];
+export const RARITIES = ['Common','Uncommon','Rare','Epic','Legendary','Mythic'] as const;
+export type Rarity = typeof RARITIES[number];
+export const ATTRIBUTES = ['Strength','Vitality','Agility','Defense','Vampirism'] as const;
+export type Attribute = typeof ATTRIBUTES[number];
+export const PETS = ['Leafhopper','Shellby','Craboulder','Emberkit'] as const;
+export type Pet = typeof PETS[number];
+export type Shrine = 'Fury'|'Fortune'|'Haste'|'Renewal';
+export interface Item { id:number; slot:Slot; rarity:Rarity; name:string; base:number; forge:number; invested:number; locked:boolean }
+export interface Enemy { id:number; name:string; hp:number; maxHp:number; damage:number; boss:boolean; attackAt:number; stunnedUntil:number; attacks:number }
+export interface Reward { lm:number; xp:number; bone:number; loot:number }
+export interface Performance extends Reward { at:number; seconds:number }
+export interface GameState {
+ version:1; rng:number; serial:number; now:number; savedAt:number; started:boolean;
+ hero:{ class:HeroClass; level:number; xp:number; hp:number; points:number; attributes:Record<Attribute,number> };
+ lm:number; bone:number; inventory:Item[]; chest:Item[]; equipped:Partial<Record<Slot,number>>;
+ floor:number; region:number; room:number; unlocked:number; cleared:number; autoAdvance:boolean; travelAt:number;
+ enemies:Enemy[]; attackAt:number; skillAt:number; petAt:number; respawnAt:number; nextRoomAt:number;
+ shrine:{kind:Shrine; until:number}|null; pets:Record<Pet,{level:number;xp:number}>; pet:Pet; shield:boolean;
+ kills:number; bosses:number; questClaims:string[]; history:Performance[]; afk:Reward & {seconds:number};
+ log:string[];
+}
+export type Command = {type:'class';value:HeroClass}|{type:'allocate';value:Attribute}|{type:'equip'|'forge'|'salvage'|'lock';id:number}|{type:'claim'|'best'|'seal'|'advance'|'afk'}|{type:'pet';value:Pet}|{type:'feed';amount:number}|{type:'travel';region:number}|{type:'quest';id:string}|{type:'buy';offer:'potion'|'cache'};
+export interface GameEvent {type:'hit'|'skill'|'pet'|'death'|'room';target:number;amount?:number;critical?:boolean;label?:string}
+export const REGIONS = ['Stone Halls','Mossbound Vault','Flooded Depths','The Catacombs','Ember Passage','Crystal Hollow','Sunken Sanctum','Ashen Keep','Obsidian Gate','Hollow Throne','The Abyss'];
+export const SKILLS:Record<HeroClass,{name:string;mult:number}> = {Sword:{name:'Whirlwind',mult:2.15},Spear:{name:'Pierce',mult:2.6},Wand:{name:'Fireball',mult:2.7},Axe:{name:'Cleave',mult:3.1},Dagger:{name:'Shadow Step',mult:2}};
+export const ROOMS = 5;
