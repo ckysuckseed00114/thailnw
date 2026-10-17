@@ -10,6 +10,8 @@ const STEPS:Record<number,(s:Raw)=>Raw>={
  1:s=>({...s,version:2,hero:{...s.hero,name:DEFAULT_NAME}}),
  // v3: the single auto-skill timer becomes per-skill cooldowns; slot 1 keeps its remaining time.
  2:({skillAt,...s})=>({...s,version:3,cooldowns:{[`${String(s.hero?.class)}-1`]:Number.isFinite(skillAt)?skillAt:0},autoCast:{}}),
+ // v4: manual targeting; older saves start on automatic.
+ 3:s=>({...s,version:4,target:0}),
 };
 /** Upgrades older save formats in memory. Unknown shapes are returned untouched for validateSave to reject. */
 export function migrateSave(value:unknown):unknown{
@@ -21,7 +23,7 @@ const finite=(v:unknown)=>typeof v==='number'&&Number.isFinite(v)&&v>=0;
 function item(i:Item){return i&&Number.isSafeInteger(i.id)&&SLOTS.includes(i.slot)&&RARITIES.includes(i.rarity)&&typeof i.name==='string'&&i.name.length<100&&finite(i.base)&&finite(i.invested)&&Number.isInteger(i.forge)&&i.forge>=0&&i.forge<=60&&typeof i.locked==='boolean';}
 export function validateSave(value:unknown):value is GameState{
  try{
-  const s=value as GameState,base=createState();if(!s||s.version!==3)return false;
+  const s=value as GameState,base=createState();if(!s||s.version!==4)return false;if(!Number.isSafeInteger(s.target))return false;
   for(const [key,v] of Object.entries(base)){const actual=s[key as keyof GameState];if(typeof v==='number'&&!finite(actual))return false;if(typeof v==='boolean'&&typeof actual!=='boolean')return false;}
   if(cleanName(s.hero.name)!==s.hero.name||!CLASSES.includes(s.hero.class)||!PETS.includes(s.pet)||!Number.isInteger(s.hero.level)||s.hero.level<1||s.hero.level>1000||!finite(s.hero.xp)||!finite(s.hero.hp)||!Number.isInteger(s.hero.points)||s.hero.points<0)return false;
   if(!ATTRIBUTES.every(a=>Number.isInteger(s.hero.attributes[a])&&s.hero.attributes[a]>=0)||s.hero.attributes.Vampirism>20)return false;

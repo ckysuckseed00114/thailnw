@@ -15,5 +15,6 @@ Idle dungeon crawler: TypeScript + Vite + Phaser 3, local-only (no backend). Pac
 - Skills live in `src/core/Skills.ts`; slot 1 mirrors `SKILLS` in models.ts. Changing enemy-hit RNG order breaks determinism of existing saves' outcomes — keep draw order stable.
 - Save format changes need `createState` + `validateSave` updates, a version bump and a migration.
 - Match the existing dense code style unless the user agrees to reformat.
+- All keyboard shortcuts go through `src/ui/keybinds.ts` + `src/ui/hud/hotkeys.ts`; never add a separate keydown listener for game actions. In dev, `window.__embermarch.scene` exposes the Phaser scene for browser debugging.
 - New UI is Preact (`src/ui/hud`, `src/ui/components`) styled only with the `--tf-*` tokens in `src/ui/theme/tokens.css`; follow `docs/UI_UX_PLAN.md` task IDs. Preview components at `/design.html` in dev. Thai text needs line-height ≥ 1.4 wherever overflow is clipped.
 - PixelLab MCP is configured in `.mcp.json` and reads its token from the `PIXELLAB_API_TOKEN` env var. Never write tokens into files, and never call PixelLab from browser code: generate assets ahead of time into `public/assets/`.

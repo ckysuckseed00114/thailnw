@@ -8,7 +8,7 @@ import {ROOM_STRIDE,traversalPoint,traversalProgress} from '../../core/RoomTrave
 import type {Element} from '../../core/Skills';
 import {ELEMENT_COLOR} from '../../ui/theme/elements';
 import {prefs} from '../../ui/hud/prefs';
-type Actor={root:Phaser.GameObjects.Container;body:Phaser.GameObjects.Sprite;weapon:Phaser.GameObjects.Container;bar:Phaser.GameObjects.Graphics;plate:Phaser.GameObjects.Text;top:number;hand:{x:number;y:number};attackUntil:number};
+type Actor={root:Phaser.GameObjects.Container;body:Phaser.GameObjects.Sprite;weapon:Phaser.GameObjects.Container;bar:Phaser.GameObjects.Graphics;plate:Phaser.GameObjects.Text;ring:Phaser.GameObjects.Graphics;top:number;hand:{x:number;y:number};attackUntil:number};
 /** Feet sit on this line inside every actor container; pixel sprites are anchored to it. */
 /** Routine (non-important) damage numbers are skipped beyond this many on screen. */
 const POPUP_CAP=28;
@@ -36,6 +36,8 @@ export class CatacombScene extends Phaser.Scene {
   // Canvas text is rasterised once; redraw labels when the pixel font arrives.
   void document.fonts?.load(`16px ${FONT}`).then(()=>{if(this.hero?.plate.active){this.hero.plate.updateText();this.caption.updateText();}});
   this.resizeView();this.scale.on('resize',this.resizeView,this);
+  // Dev-only handle for browser debugging (stripped from production builds).
+  if(import.meta.env.DEV)(window as unknown as {__embermarch?:unknown}).__embermarch={scene:this};
   this.unsubscribe=this.store.subscribe((s,e)=>this.render(s,e));this.events.once('shutdown',()=>{this.unsubscribe?.();this.scale.off('resize',this.resizeView,this);});
  }
  private resizeView(){const w=this.scale.width,h=this.scale.height;this.cameras.main.setZoom(w<761?Math.max(.8,Math.min(w/620,h/740)):Math.min(w/1440,h/900)).centerOn(w<761?this.hero.root.x+70:this.journey*ROOM_STRIDE+720,450);}
@@ -71,9 +73,15 @@ export class CatacombScene extends Phaser.Scene {
   const hand={x:boss?42:17,y:FEET-(boss?8*BOSS_PX:HAND_FROM_FEET*PX)};
   const weapon=this.add.container(hand.x,hand.y).setAngle(25);const held=hero?kind:boss?'Axe':name==='Crypt Sentinel'?'Sword':null;
   if(held)weapon.add(this.add.image(0,0,`weapon-${held}`).setOrigin(.5,.85).setScale(boss?4.4:hero?PX:3.2));
-  const plate=this.add.text(0,FEET+18,'',{fontFamily:FONT,fontSize:'11px',color:'#f6d88f',backgroundColor:'#120e18e0',padding:{x:6,y:3}}).setOrigin(.5).setVisible(hero);
-  const bar=this.add.graphics();const root=this.add.container(x,y,[shadow,body,weapon,bar,plate]);root.setData('hero',hero);
-  const a={root,body,weapon,bar,plate,top:FEET-look.rows.length*scale,hand,attackUntil:0};this.actors.set(id,a);return a;
+  const top=FEET-look.rows.length*scale;
+  // Hero: name plate under the feet. Regular enemies: a small name over the health bar (the boss has the HUD bar).
+  const plate=hero?this.add.text(0,FEET+18,'',{fontFamily:FONT,fontSize:'11px',color:'#f6d88f',backgroundColor:'#120e18e0',padding:{x:6,y:3}}).setOrigin(.5)
+   :this.add.text(0,top-19,boss?'':name.toUpperCase(),{fontFamily:FONT,fontSize:'9px',color:'#f0d9c8',stroke:'#100a10',strokeThickness:3}).setOrigin(.5,1);
+  // Gold ring under the enemy the player picked as target (2.3).
+  const ring=this.add.graphics().setVisible(false);ring.lineStyle(2,0xf3d28a,.95).strokeEllipse(0,FEET+1,boss?110:66,boss?28:18).lineStyle(1,0xf3d28a,.4).strokeEllipse(0,FEET+1,boss?124:78,boss?34:24);
+  if(!hero)body.setInteractive({useHandCursor:true}).on('pointerdown',()=>{try{this.store.dispatch({type:'target',id});}catch{/* target already gone */}});
+  const bar=this.add.graphics();const root=this.add.container(x,y,[ring,shadow,body,weapon,bar,plate]);root.setData('hero',hero);
+  const a={root,body,weapon,bar,plate,ring,top,hand,attackUntil:0};this.actors.set(id,a);return a;
  }
  update(time:number,delta:number){
   if(!this.hero)return;const s=this.store.state,dt=Math.min(delta,50)/1000,target=this.actors.get(s.enemies[0]?.id);
@@ -120,7 +128,7 @@ export class CatacombScene extends Phaser.Scene {
   this.hero.plate.setText(`${s.hero.name} · Lv ${s.hero.level}`);
   if(s.respawnAt||this.lastHp<0)this.healed=0;else if(s.hero.hp>this.lastHp)this.healed+=s.hero.hp-this.lastHp;this.lastHp=s.respawnAt?-1:s.hero.hp;
   this.hero.root.setAlpha(s.respawnAt?.3:1);this.bar(this.hero,s.hero.hp/stats(s).maxHp,0x9bc9a2);
-  s.enemies.forEach((e,i)=>{if(!this.actors.has(e.id))this.figure(e.id,this.journey*ROOM_STRIDE+780+i*125,420+(i%2)*100,e.boss,false,e.name);this.bar(this.actors.get(e.id)!,e.hp/e.maxHp,e.boss?0xe0604a:0x8eabb4);});
+  s.enemies.forEach((e,i)=>{if(!this.actors.has(e.id))this.figure(e.id,this.journey*ROOM_STRIDE+780+i*125,420+(i%2)*100,e.boss,false,e.name);const a=this.actors.get(e.id)!;this.bar(a,e.hp/e.maxHp,e.boss?0xe0604a:0x8eabb4);a.ring.setVisible(s.target===e.id);});
   this.caption.setText(s.respawnAt?`FALLEN · RETURNING IN ${Math.ceil((s.respawnAt-s.now)/1000)}s`:s.nextRoomAt?'GATE OPEN  ·  ENTERING THE NEXT CHAMBER':'');
   for(const e of events)this.effect(e,s);const ids=new Set(s.enemies.map(e=>e.id));for(const [id,a] of this.actors)if(id&&!ids.has(id)){this.actors.delete(id);this.time.delayedCall(330,()=>{if(a.root.active)this.tweens.add({targets:a.root,alpha:0,y:a.root.y+10,duration:300,onComplete:()=>{this.tweens.killTweensOf(a.weapon);a.root.destroy();}});});}
  }
@@ -145,6 +153,36 @@ export class CatacombScene extends Phaser.Scene {
   else this.tweens.add({targets:a.weapon,angle:110*face,duration:kind==='Axe'?210:kind==='Dagger'?90:160,yoyo:true,onComplete:()=>{if(a.weapon.active)a.weapon.angle=25*face;}});
   const slash=this.add.graphics().setPosition(target.root.x,target.root.y+4).setDepth(1000);slash.lineStyle(crit?5:3,crit?0xffd66d:kind==='Wand'?0xc4a9ff:0xd9efff,.95).beginPath().arc(0,0,kind==='Axe'?43:33,-1.1,1.3).strokePath();this.tweens.add({targets:slash,alpha:0,scale:1.4,duration:240,onComplete:()=>slash.destroy()});
  }
+ private shake(ms:number,intensity:number){if(!this.reduced&&prefs.value.shake)this.cameras.main.shake(ms,intensity);}
+ /** Hit feedback (2.4): white flash and knockback on enemies, red flash on the hero, light shake on crits and slams. */
+ private feedback(e:GameEvent,target:Actor){
+  const hurt=e.target===0;
+  if(e.amount){target.body.setTintFill(hurt?0xff5a4a:0xffffff);this.time.delayedCall(70,()=>{if(target.body.active)target.body.clearTint();});}
+  if(e.amount&&!hurt&&!this.reduced){const face=target.root.x>=this.hero.root.x?1:-1;this.tweens.add({targets:target.body,x:face*(e.critical?8:4),duration:60,yoyo:true,onComplete:()=>{if(target.body.active)target.body.x=0;}});}
+  if(e.critical)this.shake(90,.003);if(e.label==='SLAM'&&e.amount)this.shake(180,.008);
+  if(e.element&&!hurt)this.impactVfx(e.element as Element,target,!!e.critical);
+ }
+ /** Fades a throwaway graphic out (or just removes it under reduced motion) and destroys it. */
+ private fade(g:Phaser.GameObjects.Graphics|Phaser.GameObjects.Shape|Phaser.GameObjects.Sprite,ms:number,extra:Record<string,unknown>={}){this.tweens.add({targets:g,alpha:0,duration:this.reduced?Math.min(ms,120):ms,...(this.reduced?{}:extra),onComplete:()=>g.destroy()});}
+ /** Element-specific impact on a skill's target (original effects drawn with primitives). */
+ private impactVfx(el:Element,t:Actor,crit:boolean){
+  const x=t.root.x,y=t.root.y+FEET,top=t.root.y+t.top,g=this.add.graphics().setDepth(1001),w=crit?1.4:1;
+  if(el==='lightning'){const pts=[[x+Phaser.Math.Between(-30,30),top-140]];for(let i=1;i<=6;i++)pts.push([x+Phaser.Math.Between(-14,14)*(1-i/7),top-140+i*(y-top+130)/6]);
+   for(const [c,wd] of [[0x5fc8ff,6*w],[0xe8fbff,2]] as const){g.lineStyle(wd,c,1).beginPath().moveTo(pts[0][0],pts[0][1]);for(const p of pts.slice(1))g.lineTo(p[0],p[1]);g.strokePath();}this.fade(g,180);}
+  else if(el==='shadow'){g.lineStyle(4*w,0xb08cff,1);g.lineBetween(x-26,top+6,x+26,y-10);g.lineBetween(x+26,top+6,x-26,y-10);g.lineStyle(1.5,0xffffff,.9);g.lineBetween(x-22,top+10,x+22,y-14);this.fade(g,260,{scale:1.15});}
+  else if(el==='earth'){g.lineStyle(3*w,0x6b4422,1);for(let i=0;i<5;i++){const a=Math.PI*(.15+.7*i/4),r=30+i%2*14;g.beginPath().moveTo(x,y).lineTo(x+Math.cos(a)*r*.5+6,y+Math.sin(a)*8).lineTo(x+Math.cos(a)*r,y+Math.sin(a)*14).strokePath();}this.fade(g,520);
+   for(let i=0;i<5;i++){const d=this.add.circle(x+Phaser.Math.Between(-30,30),y-4,Phaser.Math.Between(4,8),0xb08860,.55).setDepth(1001);this.fade(d,520,{y:d.y-26,scale:1.6});}}
+  else if(el==='holy'){g.lineStyle(3*w,0xffe08a,1);for(let i=0;i<8;i++){const a=i*Math.PI/4;g.lineBetween(x+Math.cos(a)*14,top+30+Math.sin(a)*14,x+Math.cos(a)*34*w,top+30+Math.sin(a)*34*w);}this.fade(g,260,{scale:1.2});}
+  else if(el==='arcane'){g.lineStyle(2,0xd2b2ff,1).strokeCircle(x,top+30,22*w).strokeCircle(x,top+30,14*w);for(let i=0;i<4;i++){const a=i*Math.PI/2;g.fillStyle(0xf2e6ff).fillRect(x+Math.cos(a)*22*w-2,top+30+Math.sin(a)*22*w-2,4,4);}this.fade(g,320,{angle:45});}
+  else g.destroy();
+ }
+ /** Caster-side effect when a skill fires: heal motes, shield bubble, shadow afterimage. */
+ private castVfx(el:Element){
+  const h=this.hero,x=h.root.x,y=h.root.y;
+  if(el==='nature')for(let i=0;i<10;i++){const m=this.add.rectangle(x+Phaser.Math.Between(-24,24),y+Phaser.Math.Between(-10,20),4,4,0x86f09a).setDepth(1001);this.fade(m,700,{y:m.y-48,delay:i*25});}
+  else if(el==='spirit'){const b=this.add.ellipse(x,y+h.top/2+12,78,92,0x7fd8ff,.12).setStrokeStyle(2,0x7fd8ff,.9).setDepth(1001);this.fade(b,700,{scale:1.12});}
+  else if(el==='shadow'){const ghost=this.add.sprite(x,y+FEET,h.body.texture.key).setOrigin(.5,1).setScale(h.body.scaleX).setFlipX(h.body.flipX).setTint(0x8a5cff).setAlpha(.45).setDepth(y-1);this.fade(ghost,360,{x:x-18*(h.body.flipX?-1:1)});}
+ }
  private effect(e:GameEvent,s:GameState){
   const target=this.actors.get(e.target);if(e.type==='hit'&&target){const attacker=e.target===0?this.actors.get(s.enemies[0]?.id):this.hero;const impact=()=>{if(!target.root.active)return;if(attacker?.root.active)this.swing(attacker,target,!!e.critical);
     const y=target.root.y+target.top-6,x=target.root.x+(Math.random()-.5)*16,key=e.target;
@@ -153,10 +191,11 @@ export class CatacombScene extends Phaser.Scene {
     else if(e.label)this.popup(x,y,e.label,e.label==='SHIELD'?'#7fd8ff':'#c9d7ea','#141824',15,true,key);
     else if(e.target===0)this.popup(x,y,`-${e.amount}`,'#ff8f7a','#3a0f12',18,true,key);
     else if(e.critical)this.popup(x,y-6,`${e.amount}!`,elem?elem.fill:'#ffd34d',elem?elem.stroke:'#3a1d0e',34,true,key);
-    else this.popup(x,y,`${e.amount}`,elem?elem.fill:'#fff4d6',elem?elem.stroke:'#2a1a14',elem?24:21,!!elem||boss,key);};
+    else this.popup(x,y,`${e.amount}`,elem?elem.fill:'#fff4d6',elem?elem.stroke:'#2a1a14',elem?24:21,!!elem||boss,key);
+    this.feedback(e,target);};
    if(!s.nextRoomAt&&s.hero.class!=='Wand'&&e.target!==0&&this.hero.attackUntil<this.time.now&&Phaser.Math.Distance.Between(this.hero.root.x,this.hero.root.y,target.root.x,target.root.y)>100){this.walkPose(this.hero,this.time.now,target.root.x>=this.hero.root.x?1:-1);this.hero.attackUntil=this.time.now+220;this.tweens.add({targets:this.hero.root,x:target.root.x-this.reach(s,!!s.enemies.find(m=>m.id===e.target)?.boss),y:target.root.y,duration:200,ease:'Sine.easeOut',onComplete:impact});}else impact();
   }
-  if(e.type==='skill'){const dest=this.actors.get(e.target)||this.hero;const tint=Number.parseInt((e.element?ELEMENT_COLOR[e.element as Element].fill:'#f1cf88').slice(1),16);const ring=this.add.circle(this.hero.root.x,this.hero.root.y+FEET,25,tint,.05).setStrokeStyle(3,tint,.85).setDepth(900);this.tweens.add({targets:ring,scale:s.hero.class==='Sword'?5:3,alpha:0,duration:500,onComplete:()=>ring.destroy()});if(s.hero.class==='Wand'){const bolt=this.add.circle(this.hero.root.x,this.hero.root.y-10,9,0xffb661).setDepth(1000);this.tweens.add({targets:bolt,x:dest.root.x,y:dest.root.y,duration:240,onComplete:()=>bolt.destroy()});}this.popup(this.hero.root.x,this.hero.root.y+this.hero.top-22,(e.label||'').toUpperCase(),'#f8d88c','#161927',15,true,-1);}
+  if(e.type==='skill'){const dest=this.actors.get(e.target)||this.hero;const tint=Number.parseInt((e.element?ELEMENT_COLOR[e.element as Element].fill:'#f1cf88').slice(1),16);const ring=this.add.circle(this.hero.root.x,this.hero.root.y+FEET,25,tint,.05).setStrokeStyle(3,tint,.85).setDepth(900);this.tweens.add({targets:ring,scale:s.hero.class==='Sword'?5:3,alpha:0,duration:500,onComplete:()=>ring.destroy()});if(s.hero.class==='Wand'){const bolt=this.add.circle(this.hero.root.x,this.hero.root.y-10,9,0xffb661).setDepth(1000);this.tweens.add({targets:bolt,x:dest.root.x,y:dest.root.y,duration:240,onComplete:()=>bolt.destroy()});}this.popup(this.hero.root.x,this.hero.root.y+this.hero.top-22,(e.label||'').toUpperCase(),'#f8d88c','#161927',15,true,-1);if(e.element)this.castVfx(e.element as Element);}
   if(e.type==='pet'){const ring=this.add.circle(this.pet.x,this.pet.y,15).setStrokeStyle(2,0xa4e2a2,.8).setDepth(950);this.tweens.add({targets:ring,scale:3,alpha:0,duration:600,onComplete:()=>ring.destroy()});}
  }
 }

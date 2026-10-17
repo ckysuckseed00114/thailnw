@@ -2,6 +2,7 @@ import {useEffect,useRef,useState} from 'preact/hooks';
 import {REGIONS} from '../../core/models';
 import type {SoundFX} from '../../services/SoundFX';
 import {useGame} from './gameSignal';
+import {keybindsOpen} from './KeybindsDialog';
 import {UI_SCALE_MAX,UI_SCALE_MIN,prefs,setPref,type DamageNumbers} from './prefs';
 
 const pad=(n:number)=>String(n).padStart(2,'0');
@@ -22,7 +23,9 @@ function QuickSettings({sfx,onClose}:{sfx:SoundFX;onClose:()=>void}){
   <label class="qs-row"><span>ขนาด UI</span><input type="range" min={UI_SCALE_MIN*100} max={UI_SCALE_MAX*100} step="5" value={Math.round(p.scale*100)} onInput={e=>setPref('scale',Number((e.target as HTMLInputElement).value)/100)}/><b>{Math.round(p.scale*100)}%</b></label>
   <label class="qs-row"><span>เสียงเอฟเฟกต์</span><input type="checkbox" checked={!p.muted} onChange={e=>{const on=(e.target as HTMLInputElement).checked;sfx.enabled=on;setPref('muted',!on);}}/><b>{p.muted?'ปิด':'เปิด'}</b></label>
   <label class="qs-row"><span>ตัวเลขดาเมจ</span><select value={p.damageNumbers} onChange={e=>setPref('damageNumbers',(e.target as HTMLSelectElement).value as DamageNumbers)}><option value="all">ทั้งหมด</option><option value="important">เฉพาะสำคัญ</option><option value="off">ปิด</option></select><b/></label>
+  <label class="qs-row"><span>สั่นหน้าจอ</span><input type="checkbox" checked={p.shake} onChange={e=>setPref('shake',(e.target as HTMLInputElement).checked)}/><b>{p.shake?'เปิด':'ปิด'}</b></label>
   <div class="qs-actions"><button type="button" onClick={()=>setPref('scale',1)}>รีเซ็ตขนาด</button><button type="button" onClick={fullscreen}>เต็มจอ</button></div>
+  <button type="button" class="qs-keys" onClick={()=>{onClose();keybindsOpen.value=true;}}>ปุ่มลัด…</button>
  </div>;
 }
 export function TopBar({sfx}:{sfx:SoundFX}){

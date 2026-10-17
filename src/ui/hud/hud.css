@@ -11,8 +11,31 @@
 .hud-root>.qt{grid-area:quest;justify-self:end}
 /* Old DOM HUD pieces the grid replaces; the rest scale with the same preference. */
 .hud-v2 .hero-card,.hud-v2 .mini-map,.hud-v2 .dungeon-title,.hud-v2 .live-status,.hud-v2 header,.hud-v2 .room-objective,.hud-v2 .shrine-card{display:none!important}
-.hud-v2 nav,.hud-v2 .battle-footer,.hud-v2 .chest-card,.hud-v2 .screen-tools,.hud-v2 .boss-hud{zoom:var(--tf-ui-scale,1)}
-.hud-v2 .boss-hud{top:96px}
+.hud-v2 nav,.hud-v2 .battle-footer,.hud-v2 .chest-card,.hud-v2 .screen-tools{zoom:var(--tf-ui-scale,1)}
+.hud-v2 .boss-hud{display:none!important}
+
+/* Target frame + boss bar (2.3): same slot under the top bar; only one shows at a time. */
+.tg,.bb{position:absolute;left:50%;top:96px;transform:translateX(-50%);width:min(420px,calc(100% - 700px));min-width:260px;padding:6px 10px 8px;background:linear-gradient(170deg,#1d1610ee,#0f0b08f2);border:1px solid var(--tf-gold-lo);border-top:2px solid var(--tf-gold-edge);border-radius:4px;box-shadow:0 4px 14px #000a}
+.bb{width:min(560px,calc(100% - 660px));min-width:300px;border-color:#7a2a24;border-top-color:#d6604a}
+.tg-head,.bb-head{display:flex;align-items:baseline;gap:8px;margin-bottom:4px;white-space:nowrap;overflow:hidden}
+.tg-name,.bb-name{font:500 14px/1.45 var(--tf-font-head);color:var(--tf-text)}.bb-name{font-size:15px;color:#ffd9c2}
+.tg-lv,.bb-sub{font:400 11px var(--tf-font-body);color:var(--tf-text-3);overflow:hidden;text-overflow:ellipsis}
+.tg-mode{margin-left:auto;padding:1px 7px;font:500 10px var(--tf-font-head);color:var(--tf-text-3);border:1px solid #c9973f40;border-radius:9px}
+.tg-mode.manual{color:#2a1a08;background:var(--tf-gold-hi);border-color:var(--tf-gold-edge)}
+.bb-phase{margin-left:auto;font:400 10px var(--tf-font-num);color:#ffb4a0}
+.tg-stun{font:500 10px var(--tf-font-head);color:#9fdcff}
+.tg-bar{position:relative;height:13px;background:#200a0c;border:1px solid #000;box-shadow:0 0 0 1px var(--tf-gold-lo);overflow:hidden}
+.tg-bar i{position:absolute;inset:0 auto 0 0;background:linear-gradient(#ff8a73 0 35%,#c8362e 35%);transition:width .2s}
+.tg-bar.boss{height:16px}.tg-bar.boss i{background:linear-gradient(#ff7a5c 0 35%,#a3221f 35%)}
+.tg-bar s{position:absolute;top:0;bottom:0;width:2px;margin-left:-1px;background:#ffd9a0cc;text-decoration:none}
+.tg-bar b{position:relative;display:block;text-align:center;font:400 8px/13px var(--tf-font-num);color:#fff;text-shadow:0 1px 0 #000,1px 0 #000,-1px 0 #000}.tg-bar.boss b{line-height:16px;font-size:9px}
+.tg-actions{display:flex;gap:6px;justify-content:flex-end;margin-top:5px}
+.tg-actions button{display:flex;align-items:center;gap:5px;padding:2px 8px;font:500 11px var(--tf-font-head)}.tg-actions .tf-key{height:15px;min-width:15px;font-size:7px}
+.bb-slam{display:flex;align-items:center;gap:5px;margin-top:5px;font:500 11px var(--tf-font-head);color:var(--tf-text-2)}
+.bb-slam i{width:9px;height:9px;border-radius:50%;background:#2a1414;border:1px solid #7a2a24}.bb-slam i.on{background:#e0604a;border-color:#ffb4a0}
+.bb-slam.next{color:#ff8a73}.bb-slam.next i.on{box-shadow:0 0 6px #ff6a4d}
+@media (prefers-reduced-motion:no-preference){.bb-slam.next span{animation:bb-pulse .6s ease-in-out infinite alternate}}
+@keyframes bb-pulse{to{opacity:.55}}
 
 /* Player frame */
 .pf{position:relative;width:300px;min-height:112px;padding:10px 12px 10px 92px}
@@ -111,8 +134,22 @@
 .chat-min{display:flex;align-items:center;gap:8px;max-height:none;height:32px;padding:0 10px;color:var(--tf-text);text-align:left}
 .chat-min-text{flex:1;min-width:0;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font:400 12px/1.5 var(--tf-font-body)}
 
+/* Key remapping window (2.5) */
+.kb{width:min(460px,calc(100vw - 24px));max-height:min(86dvh,680px);overflow:auto;padding:16px 18px;color:var(--tf-text);zoom:var(--tf-ui-scale,1)}
+.kb::backdrop{background:#050813b8}
+.kb-head{display:flex;align-items:center;justify-content:space-between}.kb-head h2{margin:0;font-size:20px}
+.kb-x{width:30px;height:30px;padding:0;font-size:18px}
+.kb-help{margin:6px 0 10px;font:400 12px/1.6 var(--tf-font-body);color:var(--tf-text-2)}
+.kb h3{margin:12px 0 4px;font:500 12px var(--tf-font-head);color:var(--tf-gold);letter-spacing:.5px}
+.kb-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:5px 0;border-top:1px solid #c9973f1f;font:400 13px/1.5 var(--tf-font-body)}
+.kb-row small{color:var(--tf-text-3)}
+.kb-key{min-width:64px;padding:4px 10px;font:400 11px var(--tf-font-num);color:var(--tf-text);background:#0d0f17;border:1px solid var(--tf-gold-edge)}
+.kb-key.wait{color:#2a1a08;background:var(--tf-gold-hi)}
+.kb-note{min-height:20px;margin:10px 0 4px;font:400 12px var(--tf-font-body);color:var(--tf-gold-hi)}
+.kb-foot{display:flex;justify-content:flex-end;gap:8px}.kb-foot button{padding:6px 14px;font:500 13px var(--tf-font-head)}
+.qs-keys{font:500 12px var(--tf-font-head);padding:6px}
 @media(max-width:1279px){.chat{left:max(12px,env(safe-area-inset-left));width:270px}}
-@media(max-width:1023px) and (min-width:761px){.chat{bottom:222px}}
+@media(max-width:1023px) and (min-width:761px){.chat{bottom:222px}.tg,.bb{top:158px}}
 @media(max-width:1100px){
  .hud-root{padding-left:max(12px,env(safe-area-inset-left));padding-right:max(12px,env(safe-area-inset-right))}
  .pf{width:260px}.tb-plate{min-width:180px;max-width:240px}.tb-plate h2{font-size:20px}.qt{width:210px}
@@ -131,7 +168,9 @@
  .mm{width:96px}.mm-disc{width:86px;height:86px}.mm-clock{top:-2px;right:-2px;font-size:8px}.mm-room{font-size:9px;margin-top:-2px}.mm-open{top:66px;right:0;width:24px;height:24px}
  .purse>span{padding:3px 7px}.purse b{font-size:10px}
  .qt{width:208px;max-width:100%}.qt-head{padding:5px 8px}.pf{max-width:100%}
- .hud-v2 .boss-hud{top:auto;bottom:228px}
+ .tg,.bb{top:auto;bottom:228px;width:calc(100% - 20px);min-width:0}
+ /* With the chat expanded, lift the target/boss bar above it. */
+ .hud-root:has(section.chat) :is(.tg,.bb){bottom:378px}
  .hud-v2 .screen-tools{display:none}.hud-v2 #toast{bottom:260px}
  .hb{bottom:110px;gap:4px;padding:6px 6px 4px}.hb-cast{width:38px;height:38px}.hb-cast svg{width:24px;height:24px}.hb-slot.ult .hb-cast{width:42px;height:42px}
  .hb-advance{width:36px;height:38px;margin-bottom:19px;padding-top:4px}.hb-advance small{font-size:8px}.hb-key{font-size:7px;height:14px;min-width:14px}

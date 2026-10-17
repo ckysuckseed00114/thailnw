@@ -21,7 +21,7 @@ async function boot(){
  let last=performance.now(),lastSave=last;let saveFailed=false;
  const save=()=>{try{state.savedAt=state.now;repository.save(state);if(saveFailed)document.querySelector('#save-status-hud')!.textContent='◇ Saved on this device';saveFailed=false;}catch{if(!saveFailed)ui.toast('Storage is full or unavailable. Keep this tab open to preserve progress.');saveFailed=true;document.querySelector('#save-status-hud')!.textContent='⚠ Progress could not be saved';}};
  const ui=new UIManager(store,save);
- const unmountHud=mountHud(store,id=>ui.open(id),sfx,text=>ui.toast(text));
+ const unmountHud=mountHud(store,{open:id=>ui.open(id),toggle:id=>ui.toggle(id),toast:text=>ui.toast(text)},sfx);
  // WebGL cannot recover from a zero-size boot (hidden tab or unlaid-out pane), so wait for a real size.
  const mount=document.querySelector<HTMLElement>('#game')!;let game:Phaser.Game|undefined;
  const start=()=>{game=new Phaser.Game({type:Phaser.AUTO,parent:mount,width:mount.clientWidth,height:mount.clientHeight,backgroundColor:'#080b14',pixelArt:true,antialias:false,scale:{mode:Phaser.Scale.RESIZE,autoCenter:Phaser.Scale.CENTER_BOTH},scene:[new CatacombScene(store)],audio:{noAudio:true},fps:{target:60}});};

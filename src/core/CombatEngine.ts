@@ -3,6 +3,7 @@ import {forgeCost,itemPower,monsterStats,petXp,regionIndex,salvageValue,sealCost
 import {drop,random} from './DropTable';
 import type {Authority} from './GameState';
 import {ROOM_TRAVERSE_MS} from './RoomTraversal';
+import {focusEnemy} from './Targeting';
 import {AUTO_HEAL_BELOW,findSkill,isAuto,isUnlocked,primarySkill,readyAt,skillsFor,type SkillDef} from './Skills';
 
 export const QUESTS=[{id:'first',name:'A light in the dark',description:'Defeat 10 monsters',target:10,metric:'kills',lm:100,bone:60},{id:'warden',name:'Break the watch',description:'Defeat 3 bosses',target:3,metric:'bosses',lm:300,bone:200},{id:'veteran',name:'The long descent',description:'Defeat 100 monsters',target:100,metric:'kills',lm:800,bone:400}] as const;
@@ -17,7 +18,7 @@ export class CombatEngine implements Authority {
  private spawn(){
   const s=this.state;const boss=s.room===ROOMS;const m=monsterStats(regionIndex(s),boss);
   s.enemies=Array.from({length:boss?1:3},(_,i)=>({id:++s.serial,name:boss?'The Hollow Warden':['Mossling','Crypt Sentinel','Cave Stalker'][i],hp:m.hp,maxHp:m.hp,damage:m.damage,boss,attackAt:s.now+1800+i*400,stunnedUntil:0,attacks:0}));
-  s.nextRoomAt=0;s.attackAt=s.now+400;
+  s.nextRoomAt=0;s.attackAt=s.now+400;s.target=0;
   if(random(s)<.08){const kinds:Shrine[]=['Fury','Fortune','Haste','Renewal'];s.shrine={kind:kinds[Math.floor(random(s)*4)],until:s.now+60000};this.note(`${s.shrine.kind} shrine · blessed for 60 seconds.`);}
   this.events.push({type:'room',target:0});
  }
@@ -32,8 +33,10 @@ export class CombatEngine implements Authority {
   if(e.kind==='heal')return s.hero.hp<stats(s).maxHp*(auto?AUTO_HEAL_BELOW:1);
   return !s.shield;
  }
+ /** Only called while enemies exist (step returns early otherwise). */
+ private focus(){return focusEnemy(this.state)!;}
  private cast(k:SkillDef){
-  const s=this.state;const e=k.effect;const alive=s.enemies.filter(m=>m.hp>0);
+  const s=this.state;const e=k.effect;const f=this.focus();const alive=s.enemies.filter(m=>m.hp>0).sort((a,b)=>Number(b===f)-Number(a===f));
   this.events.push({type:'skill',target:alive[0]?.id??0,label:k.name,skill:k.id,element:k.element});
   if(e.kind==='strike')this.strike((e.target==='all'?alive:alive.slice(0,1)).map(m=>m.id),e.mult,{skill:k,stunMs:e.stunMs});
   else if(e.kind==='heal'){const max=stats(s).maxHp;s.hero.hp=Math.min(max,s.hero.hp+max*e.pct);}
@@ -50,7 +53,7 @@ export class CombatEngine implements Authority {
    s.lm+=reward.lm;s.bone+=reward.bone;this.awardXP(reward.xp);this.record(reward);
    if(e.boss){s.cleared=Math.max(s.cleared,r);s.unlocked=Math.max(s.unlocked,Math.min(s.floor*11,r+1));this.note(`Warden defeated. +${reward.lm} $LM · +${reward.xp} XP`);}
   }
-  s.enemies=s.enemies.filter(e=>e.hp>0);
+  s.enemies=s.enemies.filter(e=>e.hp>0);if(s.target&&!s.enemies.some(e=>e.id===s.target))s.target=0;
   if(!s.enemies.length&&!s.nextRoomAt)s.nextRoomAt=s.now+ROOM_TRAVERSE_MS;
  }
  tick(ms:number){
@@ -67,9 +70,9 @@ export class CombatEngine implements Authority {
   if(s.shrine&&s.shrine.until<=s.now)s.shrine=null;
   if(s.shrine?.kind==='Renewal')s.hero.hp=Math.min(stats(s).maxHp,s.hero.hp+stats(s).maxHp*.03*dt/1000);
   if(!s.enemies.length){if(!s.nextRoomAt)this.spawn();else if(s.now>=s.nextRoomAt){if(s.room===ROOMS){s.room=1;if(s.autoAdvance&&s.region<11)s.region++;}else s.room++;this.spawn();}return;}
-  if(s.now>=s.attackAt){this.strike([s.enemies[0].id],1);s.attackAt=s.now+stats(s).interval;}
+  if(s.now>=s.attackAt){this.strike([this.focus().id],1);s.attackAt=s.now+stats(s).interval;}
   for(const k of skillsFor(s))if(isUnlocked(s,k)&&isAuto(s,k)&&s.now>=readyAt(s,k)&&this.castable(k,true))this.cast(k);
-  if(s.now>=s.petAt){const bonus=1+(s.pets[s.pet].level-1)*.1;const st=stats(s);if(s.pet==='Leafhopper')s.hero.hp=Math.min(st.maxHp,s.hero.hp+st.maxHp*.1*bonus);else if(s.pet==='Shellby')s.shield=true;else{this.strike([s.enemies[0].id],(s.pet==='Craboulder'?.9:1.2)*bonus);if(s.pet==='Craboulder')s.enemies[0].stunnedUntil=s.now+1000*bonus;}this.events.push({type:'pet',target:0,label:s.pet});s.petAt=s.now+8000/(s.pet==='Shellby'?bonus:1);}
+  if(s.now>=s.petAt){const bonus=1+(s.pets[s.pet].level-1)*.1;const st=stats(s);if(s.pet==='Leafhopper')s.hero.hp=Math.min(st.maxHp,s.hero.hp+st.maxHp*.1*bonus);else if(s.pet==='Shellby')s.shield=true;else{const f=this.focus();this.strike([f.id],(s.pet==='Craboulder'?.9:1.2)*bonus);if(s.pet==='Craboulder')f.stunnedUntil=s.now+1000*bonus;}this.events.push({type:'pet',target:0,label:s.pet});s.petAt=s.now+8000/(s.pet==='Shellby'?bonus:1);}
   this.kills();
   for(const e of s.enemies){
    if(s.now<e.attackAt||s.now<e.stunnedUntil)continue;
@@ -89,6 +92,7 @@ export class CombatEngine implements Authority {
   if(c.type==='class'){check(CLASSES.includes(c.value),'Unknown class.');check(!s.started,'Your class is already chosen.');const name=c.name===undefined?s.hero.name:named(c.name);s.hero.name=name;s.hero.class=c.value;s.started=true;for(const k of skillsFor(s))s.cooldowns[k.id]=s.now+k.cooldown;this.spawn();return;}
   check(s.started,'Choose your class first.');
   if(c.type==='name'){s.hero.name=named(c.value);return;}
+  if(c.type==='target'){check(c.id===0||s.enemies.some(e=>e.id===c.id&&e.hp>0),'That target is gone.');s.target=c.id;return;}
   if(c.type==='cast'||c.type==='autocast'){
    const k=findSkill(s,c.id);check(k,'That skill does not belong to your class.');if(!k)return;
    if(c.type==='autocast'){check(typeof c.value==='boolean','Invalid auto-cast setting.');s.autoCast[k.id]=c.value;return;}

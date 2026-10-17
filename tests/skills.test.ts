@@ -1,4 +1,4 @@
-import {describe,it,expect} from 'vitest';
+﻿import {describe,it,expect} from 'vitest';
 import {createState} from '../src/core/GameState';
 import {CombatEngine} from '../src/core/CombatEngine';
 import {resume} from '../src/core/AFKManager';
@@ -46,7 +46,7 @@ describe('effects',()=>{
 });
 describe('persistence',()=>{
  it('migrates v2 saves: the old skill timer becomes the slot-1 cooldown',()=>{const {s}=hero('Dagger');const v2=JSON.parse(JSON.stringify(s));v2.version=2;v2.skillAt=s.now+2500;delete v2.cooldowns;delete v2.autoCast;
-  const m=migrateSave(v2) as GameState;expect(m.version).toBe(3);expect(m.cooldowns).toEqual({'Dagger-1':s.now+2500});expect(m.autoCast).toEqual({});expect('skillAt' in m).toBe(false);expect(validateSave(m)).toBe(true);});
+  const m=migrateSave(v2) as GameState;expect(m.version).toBe(4);expect(m.cooldowns).toEqual({'Dagger-1':s.now+2500});expect(m.autoCast).toEqual({});expect('skillAt' in m).toBe(false);expect(validateSave(m)).toBe(true);});
  it('rejects unknown skill ids and bad values',()=>{const {s}=hero();const bad=JSON.parse(JSON.stringify(s));bad.cooldowns.Hack=1;expect(validateSave(bad)).toBe(false);const bad2=JSON.parse(JSON.stringify(s));bad2.autoCast['Sword-1']='yes';expect(validateSave(bad2)).toBe(false);});
  it('shifts cooldowns across an absence so they keep their remaining time',()=>{const {s}=hero();s.cooldowns['Sword-2']=s.now+4000;const left=s.cooldowns['Sword-2']-s.now;resume(s,s.now+3600000);expect(s.cooldowns['Sword-2']-s.now).toBe(left);});
 });
