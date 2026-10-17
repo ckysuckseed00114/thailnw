@@ -1,0 +1,36 @@
+{
+  "group_id": "eec89f10-b676-4cc6-92aa-9a999db96c58",
+  "states": [
+    {
+      "character": {
+        "id": "fd54b6d0-2b0e-45b0-895d-7779afea8234",
+        "name": "Idle",
+        "prompt": "Adult elite fantasy axe warrior for a top-down 2D dungeon crawler. Mature powerful proportions, weathered determined face, copper-brown hair and short beard, burnished gold and dark steel layered plate armor with large angular pauldrons, deep midnight blue cloak, heavy long-handled double-headed iron battle axe with gold runic details. Heroic veteran silhouette, broad shoulders and sturdy stance, readable at small game scale. Precise crisp high-detail 16-bit pixel art, dark outline, warm gold highlights and cool blue shadows, consistent retro RPG sprite. Full body, facing south-east, no text, no scenery, no other characters.",
+        "size": {
+          "width": 64,
+          "height": 64
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-10-17T08:25:53.967833+00:00"
+      },
+      "folder": "Idle",
+      "frames": {
+        "rotations": {
+          "south": "Idle/rotations/south.png",
+          "south-east": "Idle/rotations/south-east.png",
+          "east": "Idle/rotations/east.png",
+          "north-east": "Idle/rotations/north-east.png",
+          "north": "Idle/rotations/north.png",
+          "north-west": "Idle/rotations/north-west.png",
+          "west": "Idle/rotations/west.png",
+          "south-west": "Idle/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-10-17T08:29:06.337901"
+}

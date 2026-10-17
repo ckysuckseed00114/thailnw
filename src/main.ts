@@ -1,6 +1,5 @@
 import Phaser from 'phaser';
 import './styles/base.css';
-import './styles/hud-immersive.css';
 import './styles/characters.css';
 import './ui/theme/tokens.css';
 import {mountHud} from './ui/hud/Hud';

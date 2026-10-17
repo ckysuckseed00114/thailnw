@@ -1,6 +1,6 @@
 # Verification — 2026-10-16
 
-> ผลตรวจล่าสุด (17 ต.ค. 2026): TypeScript และ Vite build ผ่าน; Vitest 97/97 ผ่านใน 8 ไฟล์ ดู [CURRENT_STRUCTURE_TH.md](CURRENT_STRUCTURE_TH.md) รายการด้านล่างเป็นบันทึกการตรวจรุ่นก่อน
+> ผลตรวจล่าสุด (17 ต.ค. 2026): TypeScript และ Vite build ผ่าน; Vitest 105/105 ผ่านใน 12 ไฟล์ · Axe/Spear PixelLab ตรวจเล่นจริงเดสก์ท็อปและมือถือ 390×844 ไม่มี console error · ดู [HANDOFF.md](HANDOFF.md) และ [CURRENT_STRUCTURE_TH.md](CURRENT_STRUCTURE_TH.md) รายการด้านล่างเป็นบันทึกการตรวจรุ่นก่อน
 
 - Strict TypeScript check: passed.
 - Vite production build: passed. Phaser is isolated in its own approximately 1.2 MB raw / 332 KB gzip chunk; Vite reports the expected large-chunk advisory.
@@ -26,5 +26,5 @@ Desktop screenshot: [artifacts/embermarch-desktop.jpg](artifacts/embermarch-desk
 
 - Vite entry restored at project root; LootMarch Enhanced prototype moved to `demos/lootmarch-enhanced/`.
 - Removed unused `DungeonScene.ts`; active renderer is `src/game/scenes/CatacombScene.ts`.
-- Styles renamed to `base.css` + `hud-immersive.css`; design docs live under `docs/`.
+- Live HUD styles in `src/ui/hud/hud.css`; shared dialog/base in `base.css` + `characters.css`; removed legacy `hud-immersive.css` and duplicate shell DOM.
 - Web Audio feedback from the demo mod integrated as `src/services/SoundFX.ts`.

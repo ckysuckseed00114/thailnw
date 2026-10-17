@@ -1,0 +1,36 @@
+{
+  "group_id": "dbebc8a1-1647-4014-8439-6f8043640ae0",
+  "states": [
+    {
+      "character": {
+        "id": "84c47025-b60d-4497-902c-1d3a31728363",
+        "name": "Idle",
+        "prompt": "Adult veteran sword knight for a dark fantasy dungeon crawler. Full-body 3/4 low top-down RPG sprite facing south, mature heroic proportions with a small realistic head, broad armored shoulders, long legs and sturdy boots, never a chibi child. Ornate burnished gold plate armor with layered steel joints, deep navy blue helmet and blue cape, a small crimson plume, visible stern face with dark eyes, large silver broadsword held at the right side. Match the reference game character silhouette: compact but imposing gold-and-blue armored warrior. Crisp hand-placed 1990s pixel art, readable at game scale, restrained palette, clean single dark outline. One isolated character only, centered, no floor, no background, no text, no UI, no pet, no extra weapons.",
+        "size": {
+          "width": 64,
+          "height": 64
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "low top-down",
+        "created_at": "2026-10-17T08:06:48.371784+00:00"
+      },
+      "folder": "Idle",
+      "frames": {
+        "rotations": {
+          "south": "Idle/rotations/south.png",
+          "south-east": "Idle/rotations/south-east.png",
+          "east": "Idle/rotations/east.png",
+          "north-east": "Idle/rotations/north-east.png",
+          "north": "Idle/rotations/north.png",
+          "north-west": "Idle/rotations/north-west.png",
+          "west": "Idle/rotations/west.png",
+          "south-west": "Idle/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-10-17T08:11:11.951910"
+}

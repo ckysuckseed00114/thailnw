@@ -13,7 +13,7 @@ Store → CombatEngine + Formulas + Skills + DropTable + Targeting
        ↓ state และ events
        ├─ Phaser CatacombScene: ห้อง ตัวละคร การเดิน เอฟเฟกต์
        ├─ Preact HUD: สถานะ แผนที่ hotbar เป้าหมาย แชตระบบ
-       └─ UIManager: หน้าต่างกระเป๋า ตัวละคร สัตว์เลี้ยง ร้าน ฯลฯ
+       └─ UIManager: `<dialog>` เมนูเท่านั้น (ไม่มี HUD เก่าซ้ำกับ Preact)
 
 main.ts → วงรอบ tick / save / AFK → LocalSaveRepository
 ```
@@ -42,11 +42,11 @@ main.ts → วงรอบ tick / save / AFK → LocalSaveRepository
 - ห้องเชื่อมด้วยทางเดิน: กำจัดศัตรู เปิดประตู เดินเข้าห้องใหม่; ตายแล้วเกิดใหม่โดยไม่เสียไอเทม
 - ของ 7 ช่อง 6 ระดับ rarity, loot chest, Equip Best, forge, salvage, lock, pet 4 แบบ, shrine, seal, travel, AFK reward และ quest milestone
 - HUD ใช้ Preact แล้ว แต่หน้าต่างเมนูหลักยังใช้ `UIManager` แบบเดิม; ระบบแชตแสดงข้อความระบบ ส่วนแชตผู้เล่นยังไม่เชื่อมออนไลน์
-- Sprite Sword ปัจจุบันเป็นพิกเซลที่สร้างด้วย `PixelSprites.ts` เช่นเดียวกับคลาสอื่น; ไฟล์ภาพ Sword รุ่นทดลองและเอกสาร `SWORD_SPRITE_INTEGRATION.md` เป็นประวัติของแนวทางเดิม ไม่ใช่ renderer ปัจจุบัน
+- Sword, Spear และ Axe ใช้ PNG จาก PixelLab ใน Phaser และ HUD/roster จริง (Spear มีเฟรมยืน/เดิน/แทง, Sword/Axe มีเฟรมเดิน/โจมตี); Wand/Dagger ยังใช้ `PixelSprites.ts`. ดู `SWORD_PIXELLAB_V2.md`, `SPEAR_PIXELLAB_TEST.md`, `AXE_PIXELLAB_TEST.md`; `SWORD_SPRITE_INTEGRATION.md` เป็นประวัติแนวทางเดิม
 
 ## ผลตรวจและข้อจำกัด
 
-- 17 ต.ค. 2026: TypeScript ผ่าน; Vitest **97/97** ผ่านใน 8 ไฟล์; Vite build ผ่าน
+- 17 ต.ค. 2026: TypeScript ผ่าน; Vitest **105/105** ผ่านใน 12 ไฟล์; Vite build ผ่าน; Axe/Spear ทดสอบเดสก์ท็อปและมือถือแล้ว
 - Build แจ้งเพียงขนาด chunk ของ Phaser ประมาณ 1.2 MB ก่อนบีบอัด (332 KB gzip); เป็นเรื่องขนาดดาวน์โหลดที่ควรวัดบนอุปกรณ์เป้าหมาย
 - Save อยู่ใน LocalStorage (`embermarch.save.v1`, format v5), ไม่ได้ซิงก์ข้ามอุปกรณ์ และผู้เล่นแก้ข้อมูลฝั่งเครื่องได้ เซฟ v4 ที่กำลังอยู่ห้องบอสเดิม 5 จะถูกย้ายเป็นห้อง 8 ระหว่าง migration
 - ระบบ marketplace ยังเป็นหน้ารอใช้งาน; ไม่มี backend, multiplayer, wallet, smart contract หรือเงินจริง

@@ -1,0 +1,28 @@
+/* Game menu: a compact, movable dock with a separate, modeless desktop window. */
+.menu-dock{position:fixed;z-index:24;bottom:max(12px,env(safe-area-inset-bottom));left:50%;transform:translateX(-50%);display:flex;flex-wrap:nowrap;align-items:center;gap:7px;max-width:calc(100vw - 24px);margin:0;padding:7px;background:linear-gradient(135deg,#182031f2,#160f0df5);border:1px solid var(--tf-gold-edge);border-radius:16px;box-shadow:0 16px 45px #000b,inset 0 1px #fff2;backdrop-filter:blur(16px);font-family:var(--tf-font-body)}
+.menu-dock[data-side=left]{left:max(12px,env(safe-area-inset-left));transform:none}.menu-dock[data-side=right]{left:auto;right:max(12px,env(safe-area-inset-right));transform:none}
+.menu-dock button{border:0;color:var(--tf-text);cursor:pointer}.dock-toggle,.dock-grip{height:52px;min-width:52px;padding:5px 8px;background:#ffffff0c;border-radius:11px!important;font:500 17px var(--tf-font-head)}
+.dock-toggle span{display:block;font:500 11px var(--tf-font-head)}.dock-toggle.has-window{box-shadow:inset 0 0 0 1px var(--tf-spirit)}
+.dock-grip{min-width:27px;width:27px;color:var(--tf-text-3)!important;letter-spacing:-3px;font-size:15px}
+.dock-items{display:flex;flex:1 1 auto;align-items:center;gap:5px;min-width:0;overflow-x:auto;scrollbar-width:thin;scrollbar-color:var(--tf-gold-lo) transparent}
+.dock-item{display:grid;place-items:center;gap:1px;flex:0 0 62px;height:52px;padding:4px 3px;background:#ffffff0b;border-radius:10px!important;transition:background .16s,transform .16s,box-shadow .16s}
+.dock-item span{font-size:23px;line-height:1}.dock-item small{font:500 10px var(--tf-font-head);white-space:nowrap}.dock-item:hover,.dock-item.active{background:#c9973f32;box-shadow:inset 0 0 0 1px var(--tf-gold-edge);transform:translateY(-2px)}
+.dock-restore{display:flex;align-items:center;gap:5px;flex:0 0 auto;height:46px;padding:0 10px;background:#5fc8ff20;border:1px solid var(--tf-spirit-lo)!important;border-radius:9px!important;color:#bde9ff!important;font:500 11px var(--tf-font-head)}
+.menu-dock.collapsed .dock-items,.menu-dock.collapsed .dock-grip{display:none}
+.menu-dock.collapsed{border-radius:14px;padding:5px}
+#modal{position:fixed;z-index:30;margin:0;max-height:82dvh;overflow:auto;overscroll-behavior:contain;backdrop-filter:blur(12px);background:linear-gradient(155deg,#202737f7,#15100ff9 65%);border-color:var(--tf-gold-edge);box-shadow:0 22px 70px #000d,inset 0 1px #fff2}
+#modal:not(.blocking){top:10vh;left:calc(50vw - min(465px,calc((100vw - 32px)/2)))}
+#modal.blocking{top:50%;left:50%;transform:translate(-50%,-50%)}
+#modal[data-snap=left],#modal[data-snap=right]{width:min(620px,calc(100vw - 32px));max-height:calc(100dvh - 32px)}
+#modal .modal-header{position:sticky;top:-28px;z-index:1;cursor:grab;touch-action:none;padding:11px 3px;margin:-11px -3px 16px;background:linear-gradient(120deg,#242330f7,#1c1718f7);border-bottom:1px solid #c9973f55}
+#modal.dragging .modal-header{cursor:grabbing}#modal.blocking .modal-header{cursor:default}
+.modal-controls{display:flex;align-items:center;gap:5px}.modal-controls button{width:31px;height:31px;display:grid;place-items:center;padding:0;border:1px solid #c9973f55;border-radius:8px;background:#ffffff0c;color:var(--tf-text);font-size:18px}.modal-controls button:hover{background:#c9973f32;border-color:var(--tf-gold-edge)}
+#modal.blocking .modal-snap,#modal.blocking .modal-minimize{display:none}
+@media(max-width:760px){
+ .menu-dock{left:8px!important;right:8px!important;bottom:max(7px,env(safe-area-inset-bottom));transform:none!important;max-width:none;padding:5px;gap:4px;border-radius:12px}
+ .dock-toggle{min-width:43px;width:43px;height:46px}.dock-item{flex-basis:52px;height:46px}.dock-item span{font-size:20px}.dock-item small{font-size:8px}.dock-grip{display:none}.dock-restore span{display:none}
+ #modal,#modal:not(.blocking),#modal.blocking{left:8px!important;right:8px;top:8px!important;width:calc(100vw - 16px)!important;max-height:calc(100dvh - 74px);transform:none;padding:16px}
+ #modal .modal-header{top:-16px;cursor:default}
+ #modal .modal-snap{display:none}
+}
+@media(prefers-reduced-motion:reduce){.dock-item{transition:none}}

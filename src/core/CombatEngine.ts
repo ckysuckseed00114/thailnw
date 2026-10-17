@@ -108,11 +108,12 @@ export class CombatEngine implements Authority {
    this.cast(k);return;
   }
   if(c.type==='allocate'){check(ATTRIBUTES.includes(c.value)&&s.hero.points>0,'No attribute points available.');check(c.value!=='Vampirism'||s.hero.attributes.Vampirism<20,'Vampirism is capped at 20.');s.hero.points--;s.hero.attributes[c.value]++;}
-  else if(c.type==='claim'){const room=MAX_INVENTORY-s.inventory.length;check(room>0||!s.chest.length,`Inventory is full (${MAX_INVENTORY}). Salvage gear to make room.`);s.inventory.push(...s.chest.splice(0,Math.max(0,room)));if(s.chest.length)this.note(`Inventory full · ${s.chest.length} items wait in the chest.`);}
+  else if(c.type==='claim'){const worn=new Set(Object.values(s.equipped)),room=MAX_INVENTORY-s.inventory.filter(i=>!worn.has(i.id)).length;check(room>0||!s.chest.length,`Inventory is full (${MAX_INVENTORY}). Salvage gear to make room.`);s.inventory.push(...s.chest.splice(0,Math.max(0,room)));if(s.chest.length)this.note(`Inventory full · ${s.chest.length} items wait in the chest.`);}
   else if(c.type==='best'){for(const slot of SLOTS){const best=s.inventory.filter(i=>i.slot===slot).sort((a,b)=>itemPower(b)-itemPower(a))[0];if(best)s.equipped[slot]=best.id;}}
-  else if(c.type==='equip'||c.type==='forge'||c.type==='salvage'||c.type==='lock'){
+  else if(c.type==='equip'||c.type==='unequip'||c.type==='forge'||c.type==='salvage'||c.type==='lock'){
    const item=s.inventory.find(i=>i.id===c.id);check(item,'Item not found.');if(!item)return;
    if(c.type==='equip')s.equipped[item.slot]=item.id;
+   if(c.type==='unequip'){check(s.equipped[item.slot]===item.id,'Item is not equipped.');const worn=new Set(Object.values(s.equipped));check(s.inventory.filter(i=>!worn.has(i.id)).length<MAX_INVENTORY,'Inventory is full. Salvage gear to make room.');delete s.equipped[item.slot];}
    if(c.type==='lock')item.locked=!item.locked;
    if(c.type==='forge'){check(item.forge<60,'Maximum forge level reached.');const price=forgeCost(item);spend(price.lm,price.bone);item.forge++;item.invested+=price.bone;}
    if(c.type==='salvage'){check(!item.locked&&s.equipped[item.slot]!==item.id,'Unequip or replace equipped gear, and unlock before salvaging.');s.bone+=salvageValue(item);s.inventory=s.inventory.filter(i=>i.id!==item.id);}

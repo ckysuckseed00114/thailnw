@@ -187,7 +187,7 @@ codex-lootmarch-engine/
     │
     └── styles/                      # สไตล์ชีต CSS
         ├── base.css                 # โครงสร้างหลักและ CSS Reset
-        ├── hud-immersive.css        # HUD แบบเต็มจอทับ Phaser
+        ├── ui/hud/hud.css           # Preact HUD แบบเต็มจอทับ Phaser
         ├── hud.css                  # สไตล์ HUD ด้านบน, ด้านข้าง และป้ายประกาศ
         ├── bottom-bar.css           # สไตล์ปุ่มเมนูล่างและคูลดาวน์สกิล
         └── modals.css               # สไตล์ Glassmorphism ของหน้าต่างป๊อปอัป

@@ -1,0 +1,36 @@
+{
+  "group_id": "a0777136-2f07-4f3f-b777-0f641df9bafd",
+  "states": [
+    {
+      "character": {
+        "id": "e50c4400-8c3e-4e91-aef3-9116414aa29c",
+        "name": "Idle",
+        "prompt": "Adult spearman warrior character in a side-scrolling fantasy RPG view, standing in a poised side-facing three-quarter stance, holding an ornate long spear with a steel leaf-shaped point and engraved gold fittings. Mature athletic proportions, determined face, dark auburn hair tied back beneath a low gilded helmet, detailed dark steel armor with gold trim and dark red cloth accents, deep charcoal cloak with burgundy lining. Distinct silhouette and long spear fully visible, compact readable full-body 16-bit GBA RPG pixel art, high contrast, crisp single-pixel dark outline, restrained warm highlights and cool shadow, consistent game sprite. Solid transparent background, no scenery, no lettering, no extra people.",
+        "size": {
+          "width": 64,
+          "height": 64
+        },
+        "template_id": "mannequin",
+        "directions": 8,
+        "view": "side",
+        "created_at": "2026-10-17T14:15:48.777698+00:00"
+      },
+      "folder": "Idle",
+      "frames": {
+        "rotations": {
+          "south": "Idle/rotations/south.png",
+          "south-east": "Idle/rotations/south-east.png",
+          "east": "Idle/rotations/east.png",
+          "north-east": "Idle/rotations/north-east.png",
+          "north": "Idle/rotations/north.png",
+          "north-west": "Idle/rotations/north-west.png",
+          "west": "Idle/rotations/west.png",
+          "south-west": "Idle/rotations/south-west.png"
+        },
+        "animations": {}
+      }
+    }
+  ],
+  "export_version": "3.1",
+  "export_date": "2026-10-17T14:21:50.582614"
+}

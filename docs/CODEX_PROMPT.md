@@ -90,7 +90,9 @@ Your task is to build a complete, production-ready, fully functional 2D Idle Dun
 ├── src/
 │   ├── main.ts                   # App entrypoint
 │   ├── styles/                   # Modern dark-fantasy CSS
-│   │   ├── main.css
+│   │   ├── base.css
+│   │   ├── characters.css
+│   │   ├── ui/hud/hud.css
 │   │   ├── ui-panels.css
 │   │   └── animations.css
 │   ├── core/                     # Pure logic / decoupled engine
@@ -109,7 +111,9 @@ Your task is to build a complete, production-ready, fully functional 2D Idle Dun
 │   │   ├── GameConfig.ts
 │   │   ├── scenes/
 │   │   │   ├── BootScene.ts
-│   │   │   └── DungeonScene.ts   # Room renderer, hero/monster sprites, effects
+│   │   │   └── scenes/CatacombScene.ts   # Room renderer, hero/monster sprites, effects
+│   │   ├── ui/hud/                 # Preact HUD (live overlay)
+│   │   └── UIManager.ts            # Modal dialogs only (inventory, travel, …)
 │   │   └── entities/
 │   │       ├── HeroSprite.ts
 │   │       └── MonsterSprite.ts

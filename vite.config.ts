@@ -1,2 +1,5 @@
 import { defineConfig } from 'vite';
-export default defineConfig({build:{rollupOptions:{output:{manualChunks:{phaser:['phaser']}}}}});
+export default defineConfig({
+ build:{rollupOptions:{output:{manualChunks:{phaser:['phaser']}}}},
+ test:{environmentMatchGlobs:[['tests/shell.test.ts','jsdom']]},
+});
