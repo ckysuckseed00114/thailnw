@@ -1,22 +1,23 @@
 import Phaser from 'phaser';
-import {SWORD_TEXTURE,prepareSword,dressSword} from '../SwordSprite';
 import type {Store} from '../../core/GameState';
 import type {GameEvent,GameState} from '../../core/models';
 import {stats} from '../../core/Formulas';
 import {CLASSES} from '../../core/models';
-import {heroPixels,weaponPixels} from '../HeroArt';
+import {HERO_DESIGNS} from '../HeroArt';
+import {HAND_FROM_FEET,MONSTERS,heroSprite,monsterSprite,weaponSprite,type Sprite} from '../PixelSprites';
 import {ROOM_STRIDE,traversalPoint,traversalProgress} from '../../core/RoomTraversal';
-type Actor={root:Phaser.GameObjects.Container;body:Phaser.GameObjects.Sprite;legs:Phaser.GameObjects.Rectangle[];weapon:Phaser.GameObjects.Container;bar:Phaser.GameObjects.Graphics;attackUntil:number};
+type Actor={root:Phaser.GameObjects.Container;body:Phaser.GameObjects.Sprite;weapon:Phaser.GameObjects.Container;bar:Phaser.GameObjects.Graphics;plate:Phaser.GameObjects.Text;top:number;hand:{x:number;y:number};attackUntil:number};
+/** Feet sit on this line inside every actor container; pixel sprites are anchored to it. */
+const FEET=24,PX=4,BOSS_PX=5,FONT='Silkscreen, "Courier New", monospace';
 /** Presentation positions are independent of authoritative combat math. */
 export class CatacombScene extends Phaser.Scene {
- private actors=new Map<number,Actor>();private hero!:Actor;private pet!:Phaser.GameObjects.Container;private caption!:Phaser.GameObjects.Text;private unsubscribe?:()=>void;private room='';
+ private actors=new Map<number,Actor>();private hero!:Actor;private pet!:Phaser.GameObjects.Container;private caption!:Phaser.GameObjects.Text;private warn!:Phaser.GameObjects.Graphics;private unsubscribe?:()=>void;private room='';
  private reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
  private sections:{root:Phaser.GameObjects.Container;top:Phaser.GameObjects.Rectangle;bottom:Phaser.GameObjects.Rectangle}[]=[];
  private journey=0;private traversal:{x:number;y:number;until:number}|null=null;private wasDead=false;private travelAt=0;private lastStateAt=0;
+ private lastHp=-1;private healed=0;private healShownAt=0;
  constructor(private store:Store){super('Catacombs');}
- preload(){this.load.image('sword-source',`${import.meta.env.BASE_URL}assets/heroes/sword-source-v1.png`);}
  create(){
-  prepareSword(this);
   for(let i=0;i<3;i++){
    const before=new Set(this.children.list);this.environment();
    const frame=this.add.graphics();frame.fillStyle(0x121a2b).fillRect(1323,384,48,18).fillRect(1323,528,48,18);frame.lineStyle(3,0xa38b60).strokeRect(1327,388,40,12).strokeRect(1327,530,40,12);
@@ -24,9 +25,11 @@ export class CatacombScene extends Phaser.Scene {
    const bottom=this.add.rectangle(1347,530,27,65,0x625b50).setOrigin(.5,1).setStrokeStyle(3,0xc1a06b);
    const children=this.children.list.filter(c=>!before.has(c));const root=this.add.container((i-1)*ROOM_STRIDE,0,children);this.sections.push({root,top,bottom});
   }
-  this.makeTextures();this.hero=this.figure(0,590,460,false,true);
+  this.makeTextures();this.warn=this.add.graphics().setDepth(5);this.hero=this.figure(0,590,460,false,true);
   this.pet=this.add.container(540,500,[this.add.ellipse(0,17,26,9,0x000000,.35),this.add.image(0,0,'companion').setScale(2.5)]);
-  this.caption=this.add.text(720,740,'',{fontFamily:'Georgia',fontSize:'18px',color:'#b8c7df',stroke:'#080d1c',strokeThickness:5,letterSpacing:3}).setOrigin(.5).setDepth(1000);
+  this.caption=this.add.text(720,740,'',{fontFamily:FONT,fontSize:'14px',color:'#b8c7df',stroke:'#080d1c',strokeThickness:5,letterSpacing:2}).setOrigin(.5).setDepth(1000);
+  // Canvas text is rasterised once; redraw labels when the pixel font arrives.
+  void document.fonts?.load(`16px ${FONT}`).then(()=>{if(this.hero?.plate.active){this.hero.plate.updateText();this.caption.updateText();}});
   this.resizeView();this.scale.on('resize',this.resizeView,this);
   this.unsubscribe=this.store.subscribe((s,e)=>this.render(s,e));this.events.once('shutdown',()=>{this.unsubscribe?.();this.scale.off('resize',this.resizeView,this);});
  }
@@ -49,18 +52,23 @@ export class CatacombScene extends Phaser.Scene {
  private column(x:number,y:number){const g=this.add.graphics();g.fillStyle(0x070b17,.3).fillEllipse(x+5,y+37,65,22);g.fillStyle(0x111a2c).fillRect(x-19,y-15,38,52);g.fillStyle(0x536788).fillRect(x-15,y-12,30,45);g.fillStyle(0x8ea3bf).fillRect(x-11,y-10,9,36);g.fillStyle(0x273a57).fillRect(x+7,y-10,6,36);g.fillStyle(0x253b56).fillRect(x-24,y-31,48,27);g.fillStyle(0xa1bad2).fillRect(x-20,y-27,40,18);g.fillStyle(0x6f94b9).fillRect(x-17,y-24,34,14);g.fillStyle(0xb1c5dc).fillRect(x-24,y+30,48,7);this.flame(x,y-40);}
  private flame(x:number,y:number){const glow=this.add.circle(x,y,67,0x5ebcff,.035);this.add.circle(x,y,31,0x63bcff,.06);const flame=this.add.container(x,y,[this.add.rectangle(0,2,11,16,0x298bd2),this.add.rectangle(1,-5,6,18,0x61c9ff),this.add.rectangle(0,2,5,9,0xdbfaff),this.add.rectangle(3,-14,3,7,0x9dedff)]);if(!this.reduced)this.tweens.add({targets:[flame,glow],alpha:.55,scaleY:.88,duration:530+x%230,yoyo:true,repeat:-1});}
  private texture(key:string,rows:string[],palette:Record<string,number>){const g=this.make.graphics({x:0,y:0});rows.forEach((r,y)=>[...r].forEach((c,x)=>{if(c!=='.'&&palette[c]!==undefined)g.fillStyle(palette[c]).fillRect(x,y,1,1);}));g.generateTexture(key,rows[0].length,rows.length);g.destroy();}
+ private sprite(key:string,s:Sprite){const palette:Record<string,number>={};for(const [c,hex] of Object.entries(s.palette))palette[c]=Number.parseInt(hex.slice(1),16);this.texture(key,s.rows,palette);}
  private makeTextures(){
-  for(const kind of CLASSES){for(const [key,pixels] of [[`hero-${kind}`,heroPixels(kind)],[`weapon-${kind}`,weaponPixels(kind)]] as const){const g=this.make.graphics({x:0,y:0});for(const p of pixels)g.fillStyle(Number.parseInt(p.color.slice(1),16)).fillRect(p.x,p.y,p.w,p.h);g.generateTexture(key,32,key.startsWith('weapon')?48:34);g.destroy();}}
-  this.texture('knight',['......rrr.......','.....rRRrr......','.....rrRrr......','....GGGGGG......','...GYYYYYYG.....','...GYyyyyYG.....','...GYkYYkYG.....','....YSSSSY......','.....SSSS.......','...GGYYYYGG.....','..GYYyYYyYYG....','..GYyBBBBYyG....','..SGBYYYYBGS....','..SSGYYYYGSS....','....GBBBBG......','....GYYYYG......'],{r:0x763d45,R:0xdd6a67,G:0x6c522f,Y:0xe7bd61,y:0xffe49a,k:0x1a2436,S:0xd8a780,B:0x3c455c});
-  this.texture('bones',['.....bbbbbb.....','....bSSSSSSb....','....bSssssSb....','....bSkkSkSb....','.....SssSsS.....','......SttS......','.......bb.......','....bbSSSSbb....','...bSbsSSsbSb...','...SbSbSSbSbS...','...SbSbSSbSbS...','....bbSSSSbb....','.....bSSSSb.....','.....bbSSbb.....','......bSSb......','................'],{b:0x323a49,S:0xc6c5b3,s:0x8c9b9d,k:0x162134,t:0xf1dfb2});
-  this.texture('warden',['..R..........R..','..RR........RR..','...RGGGGGGGGR...','...GYYYYYYYYG...','...GYkYYkYYYG...','....GrrrrrrG....','.....GttttG.....','....GGYYYYGG....','..GGYYYYYYYYGG..','.GYGGYYYYGGYYYG.','.GYGGYYYYGGYYYG.','..GGGYYYYYYGGG..','....GYYYYYYG....','....GGGGGGGG....','.....GGYYGG.....','.....GGYYGG.....'],{R:0xde8d75,G:0x493a49,Y:0x9e7482,k:0xffdf9c,r:0x202737,t:0xdac7a4});
+  for(const kind of CLASSES){this.sprite(`hero-${kind}-0`,heroSprite(kind,0));this.sprite(`hero-${kind}-1`,heroSprite(kind,1));this.sprite(`weapon-${kind}`,weaponSprite(kind));}
+  for(const [name,s] of Object.entries(MONSTERS))this.sprite(`mon-${name}`,s);
   this.texture('companion',['..g......g..','..gG....Gg..','...GGGGGG...','..GGGGGGGG..','..GkGGGGkG..','..GGGyyGGG..','...GGGGGG...','...gGGGGg...','....g..g....'],{g:0x4c7353,G:0xa9cc82,k:0x182d37,y:0xf3dfa1});
  }
- private figure(id:number,x:number,y:number,boss:boolean,hero=false):Actor{
-  const kind=this.store.state.hero.class;const shadow=this.add.ellipse(0,27,boss?67:52,14,0x050813,.5);const legs=[this.add.rectangle(-8,20,8,17,hero?0x526478:0x8d979d),this.add.rectangle(8,20,8,17,hero?0x526478:0x8d979d)];const body=this.add.sprite(0,hero?-12:-5,hero?`hero-${kind}`:boss?'warden':'bones').setScale(hero?2.3:boss?4.4:3);
-  const weapon=this.add.container(20,5,[this.add.rectangle(0,-14,5,29,0xc6e4ee),this.add.rectangle(-2,-14,2,27,0x6985a5),this.add.rectangle(0,2,15,4,0xe5b962),this.add.rectangle(0,10,4,12,0x82603e)]).setAngle(25);const bar=this.add.graphics();const label=this.add.text(0,-46,hero?'WANDERER':boss?'HOLLOW WARDEN':'',{fontFamily:'monospace',fontSize:hero?'10px':'12px',color:hero?'#f4d087':'#e8b9ac',stroke:'#111725',strokeThickness:4}).setOrigin(.5);
-  if(hero){weapon.removeAll(true);weapon.add(this.add.image(0,-17,`weapon-${kind}`).setScale(kind==='Spear'?1.7:1.55));if(kind==='Dagger'){const offhand=this.add.image(-21,7,`weapon-${kind}`).setScale(1.1).setAngle(-40);weapon.add(offhand);}label.setText(kind.toUpperCase());label.y=-62;}
-  const root=this.add.container(x,y,[shadow,...legs,body,weapon,bar,label]);root.setData('hero',hero);const a={root,body,legs,weapon,bar,attackUntil:0};if(hero&&kind==='Sword'&&this.textures.exists(SWORD_TEXTURE)){dressSword(body);legs.forEach(l=>l.setVisible(false));weapon.setVisible(false);}this.actors.set(id,a);return a;
+ private figure(id:number,x:number,y:number,boss:boolean,hero=false,name=''):Actor{
+  const kind=this.store.state.hero.class,scale=boss?BOSS_PX:PX;
+  const look=hero?heroSprite(kind):monsterSprite(name,boss);const key=hero?`hero-${kind}-0`:boss?'mon-boss':`mon-${MONSTERS[name]?name:'Crypt Sentinel'}`;
+  const shadow=this.add.ellipse(0,FEET+1,boss?96:hero?52:56,boss?22:14,0x050813,.5);
+  const body=this.add.sprite(0,FEET,key).setOrigin(.5,1).setScale(scale);
+  const hand={x:boss?42:17,y:FEET-(boss?8*BOSS_PX:HAND_FROM_FEET*PX)};
+  const weapon=this.add.container(hand.x,hand.y).setAngle(25);const held=hero?kind:boss?'Axe':name==='Crypt Sentinel'?'Sword':null;
+  if(held)weapon.add(this.add.image(0,0,`weapon-${held}`).setOrigin(.5,.85).setScale(boss?4.4:hero?PX:3.2));
+  const plate=this.add.text(0,FEET+18,'',{fontFamily:FONT,fontSize:'11px',color:'#f6d88f',backgroundColor:'#120e18e0',padding:{x:6,y:3}}).setOrigin(.5).setVisible(hero);
+  const bar=this.add.graphics();const root=this.add.container(x,y,[shadow,body,weapon,bar,plate]);root.setData('hero',hero);
+  const a={root,body,weapon,bar,plate,top:FEET-look.rows.length*scale,hand,attackUntil:0};this.actors.set(id,a);return a;
  }
  update(time:number,delta:number){
   if(!this.hero)return;const s=this.store.state,dt=Math.min(delta,50)/1000,target=this.actors.get(s.enemies[0]?.id);
@@ -68,12 +76,27 @@ export class CatacombScene extends Phaser.Scene {
   if(this.traversal&&s.nextRoomAt&&!s.respawnAt){
    const progress=traversalProgress(s.now+Math.max(0,time-this.lastStateAt),this.traversal.until);const position=traversalPoint(this.traversal,this.journey*ROOM_STRIDE,progress);this.hero.root.setPosition(position.x,position.y);this.hero.attackUntil=0;this.walkPose(this.hero,time,1);this.caption.x=this.hero.root.x;
    this.sections[1].top.setScale(1,1-Math.min(1,progress/.12));this.sections[1].bottom.setScale(1,1-Math.min(1,progress/.12));
-  }else if(s.started&&!s.respawnAt){if(target)this.move(this.hero,target.root.x-(s.hero.class==='Wand'?145:64),target.root.y,dt,time,235);for(const e of s.enemies){const a=this.actors.get(e.id);if(!a||a.attackUntil>time)continue;if(Phaser.Math.Distance.Between(a.root.x,a.root.y,this.hero.root.x,this.hero.root.y)>95&&e.stunnedUntil<s.now)this.move(a,this.hero.root.x+78,this.hero.root.y,dt,time,32);else this.idle(a,time);}}else this.idle(this.hero,time);
-  this.pet.x=Phaser.Math.Linear(this.pet.x,this.hero.root.x-47,Math.min(1,dt*4));this.pet.y=Phaser.Math.Linear(this.pet.y,this.hero.root.y+39,Math.min(1,dt*4));this.pet.setDepth(this.pet.y);const body=this.pet.list[1] as Phaser.GameObjects.Image;body.setTint(s.pet==='Emberkit'?0xff9d59:s.pet==='Shellby'?0x8ac9ef:s.pet==='Craboulder'?0xc8b0a0:0xffffff);body.y=this.reduced?0:Math.sin(time/150)*2;
+  }else if(s.started&&!s.respawnAt){if(target)this.move(this.hero,target.root.x-this.reach(s,s.enemies[0].boss),target.root.y,dt,time,235);for(const e of s.enemies){const a=this.actors.get(e.id);if(!a||a.attackUntil>time)continue;const gap=e.boss?110:78;if(Phaser.Math.Distance.Between(a.root.x,a.root.y,this.hero.root.x,this.hero.root.y)>gap+17&&e.stunnedUntil<s.now)this.move(a,this.hero.root.x+gap,this.hero.root.y,dt,time,32);else this.idle(a,time);}}else this.idle(this.hero,time);
+  this.pet.x=Phaser.Math.Linear(this.pet.x,this.hero.root.x-62,Math.min(1,dt*4));this.pet.y=Phaser.Math.Linear(this.pet.y,this.hero.root.y+12,Math.min(1,dt*4));this.pet.setDepth(this.pet.y);const body=this.pet.list[1] as Phaser.GameObjects.Image;body.setTint(s.pet==='Emberkit'?0xff9d59:s.pet==='Shellby'?0x8ac9ef:s.pet==='Craboulder'?0xc8b0a0:0xffffff);body.y=this.reduced?0:Math.sin(time/150)*2;
+  this.telegraph(s,time);
+  if(this.healed>=1&&time-this.healShownAt>450){this.popup(this.hero.root.x+18,this.hero.root.y+this.hero.top-4,`+${Math.round(this.healed)}`,'#7dff8a','#0d3315',17);this.healed=0;this.healShownAt=time;}
  }
- private walkPose(a:Actor,time:number,face:number){a.body.setFlipX(face<0);if(a.body.texture.key===SWORD_TEXTURE){a.body.y=28;a.body.play('sword-walk',true);return;}a.weapon.x=face*20;const base=a.root.getData('hero')?-12:-5;if(!this.reduced){a.legs[0].y=20+Math.sin(time/75)*5;a.legs[1].y=20-Math.sin(time/75)*5;a.body.y=base+Math.sin(time/75)*1.5;a.weapon.angle=face*(20+Math.sin(time/95)*9);}}
+ /** Standing distance in front of a target; the boss sprite is much wider than regular monsters. */
+ private reach(s:GameState,boss:boolean){return s.hero.class==='Wand'?145:boss?96:64;}
+ /** Red ground marker under the hero while the boss winds up its every-third-hit slam. */
+ private telegraph(s:GameState,time:number){
+  this.warn.clear();const boss=s.enemies.find(e=>e.boss);if(!boss||s.respawnAt||s.nextRoomAt||(boss.attacks+1)%3!==0||boss.stunnedUntil>s.now)return;
+  const left=boss.attackAt-(s.now+Math.max(0,time-this.lastStateAt));if(left<=0||left>1500)return;
+  const p=1-left/1500,x=this.hero.root.x,y=this.hero.root.y+FEET,w=150,h=66;
+  this.warn.fillStyle(0xff3b2f,.1+.15*p).fillEllipse(x,y,w,h).fillStyle(0xff5a3c,.35).fillEllipse(x,y,w*p,h*p).lineStyle(3,0xff6a4d,.55+.4*p).strokeEllipse(x,y,w,h);
+ }
+ private walkPose(a:Actor,time:number,face:number){
+  a.body.setFlipX(face<0);a.weapon.setScale(face,1).setPosition(face*a.hand.x,a.hand.y);
+  if(a===this.hero)a.body.setTexture(`hero-${this.store.state.hero.class}-${this.reduced?0:Math.floor(time/130)%2}`);
+  if(!this.reduced){a.body.y=FEET-Math.abs(Math.sin(time/130))*2;a.weapon.angle=face*(20+Math.sin(time/95)*9);}
+ }
  private move(a:Actor,x:number,y:number,dt:number,time:number,speed:number){if(a.attackUntil>time)return;const d=Phaser.Math.Distance.Between(a.root.x,a.root.y,x,y);if(d<5){this.idle(a,time);return;}const step=Math.min(d,speed*dt),face=x>=a.root.x?1:-1;a.root.x+=(x-a.root.x)/d*step;a.root.y+=(y-a.root.y)/d*step;a.root.setDepth(a.root.y);this.walkPose(a,time,face);}
- private idle(a:Actor,time:number){if(a.attackUntil>time)return;if(a.body.texture.key===SWORD_TEXTURE){a.body.y=28;if(this.store.state.respawnAt)a.body.anims.stop();else a.body.play('sword-idle',true);return;}a.legs.forEach(l=>l.y=20);a.body.y=(a.root.getData('hero')?-12:-5)+(this.reduced?0:Math.sin(time/340));}
+ private idle(a:Actor,time:number){if(a.attackUntil>time)return;if(a===this.hero)a.body.setTexture(`hero-${this.store.state.hero.class}-0`);a.body.y=FEET+(this.reduced?0:Math.sin(time/340));}
  private render(s:GameState,events:GameEvent[]){
   this.lastStateAt=this.time.now;
   const room=`${s.floor}:${s.region}:${s.room}`;
@@ -88,28 +111,39 @@ export class CatacombScene extends Phaser.Scene {
   this.wasDead=!!s.respawnAt;
   if(s.respawnAt)this.traversal=null;
   if(s.nextRoomAt&&!this.traversal){this.tweens.killTweensOf(this.hero.root);this.traversal={x:this.hero.root.x,y:this.hero.root.y,until:s.nextRoomAt};}
-  const skin=s.hero.class==='Sword'&&this.textures.exists(SWORD_TEXTURE)?SWORD_TEXTURE:`hero-${s.hero.class}`;if(this.hero.body.texture.key!==skin){this.hero.body.anims.stop();this.hero.body.setTexture(skin).setOrigin(.5).setScale(2.3).setY(-12);const raster=skin===SWORD_TEXTURE;this.hero.legs.forEach(l=>l.setVisible(!raster));this.hero.weapon.setVisible(!raster);if(raster)dressSword(this.hero.body);(this.hero.root.list[this.hero.root.list.length-1] as Phaser.GameObjects.Text).setText(s.hero.class.toUpperCase());this.hero.weapon.removeAll(true);this.hero.weapon.add(this.add.image(0,-17,`weapon-${s.hero.class}`).setScale(s.hero.class==='Spear'?1.7:1.55));if(s.hero.class==='Dagger')this.hero.weapon.add(this.add.image(-26,9,'weapon-Dagger').setScale(1.1).setAngle(-40));}
+  if(!this.hero.body.texture.key.startsWith(`hero-${s.hero.class}-`)){this.hero.body.setTexture(`hero-${s.hero.class}-0`);this.hero.top=FEET-heroSprite(s.hero.class).rows.length*PX;this.hero.weapon.removeAll(true);this.hero.weapon.add(this.add.image(0,0,`weapon-${s.hero.class}`).setOrigin(.5,.85).setScale(PX));}
+  this.hero.plate.setText(`${HERO_DESIGNS[s.hero.class].title} · Lv ${s.hero.level}`);
+  if(s.respawnAt||this.lastHp<0)this.healed=0;else if(s.hero.hp>this.lastHp)this.healed+=s.hero.hp-this.lastHp;this.lastHp=s.respawnAt?-1:s.hero.hp;
   this.hero.root.setAlpha(s.respawnAt?.3:1);this.bar(this.hero,s.hero.hp/stats(s).maxHp,0x9bc9a2);
-  s.enemies.forEach((e,i)=>{if(!this.actors.has(e.id))this.figure(e.id,this.journey*ROOM_STRIDE+780+i*125,420+(i%2)*100,e.boss);this.bar(this.actors.get(e.id)!,e.hp/e.maxHp,e.boss?0xd89875:0x8eabb4);});
-  this.caption.setText(s.respawnAt?`FALLEN · RETURNING IN ${Math.ceil((s.respawnAt-s.now)/1000)}s`:s.nextRoomAt?'GATE OPEN  ·  ENTERING THE NEXT CHAMBER':s.enemies.some(e=>e.boss)?'◆  THE HOLLOW WARDEN  ◆':'');
+  s.enemies.forEach((e,i)=>{if(!this.actors.has(e.id))this.figure(e.id,this.journey*ROOM_STRIDE+780+i*125,420+(i%2)*100,e.boss,false,e.name);this.bar(this.actors.get(e.id)!,e.hp/e.maxHp,e.boss?0xe0604a:0x8eabb4);});
+  this.caption.setText(s.respawnAt?`FALLEN · RETURNING IN ${Math.ceil((s.respawnAt-s.now)/1000)}s`:s.nextRoomAt?'GATE OPEN  ·  ENTERING THE NEXT CHAMBER':'');
   for(const e of events)this.effect(e,s);const ids=new Set(s.enemies.map(e=>e.id));for(const [id,a] of this.actors)if(id&&!ids.has(id)){this.actors.delete(id);this.time.delayedCall(330,()=>{if(a.root.active)this.tweens.add({targets:a.root,alpha:0,y:a.root.y+10,duration:300,onComplete:()=>{this.tweens.killTweensOf(a.weapon);a.root.destroy();}});});}
  }
- private bar(a:Actor,f:number,c:number){a.bar.y=a.body.texture.key===SWORD_TEXTURE?-17:0;a.bar.clear().fillStyle(0x080d19).fillRect(-24,-36,48,4).fillStyle(c).fillRect(-24,-36,48*Math.max(0,Math.min(1,f)),4);}
+ private bar(a:Actor,f:number,c:number){const y=a.top-10;a.bar.clear().fillStyle(0x0a0710).fillRect(-25,y,50,6).fillStyle(0x3a2230).fillRect(-24,y+1,48,4).fillStyle(c).fillRect(-24,y+1,48*Math.max(0,Math.min(1,f)),4);}
+ /** Pixel-font combat number that pops, then drifts up and fades. */
+ private popup(x:number,y:number,text:string,color:string,stroke:string,size:number){
+  const t=this.add.text(x,y,text,{fontFamily:FONT,fontSize:`${size}px`,fontStyle:'bold',color,stroke,strokeThickness:Math.max(4,Math.round(size/5))}).setOrigin(.5).setDepth(1100).setScale(1.45);
+  this.tweens.add({targets:t,scale:1,duration:110,ease:'Back.easeOut'});this.tweens.add({targets:t,y:y-46,alpha:0,delay:380,duration:620,ease:'Sine.easeIn',onComplete:()=>t.destroy()});
+ }
  private swing(a:Actor,target:Actor,crit=false){
   const kind=a===this.hero?this.store.state.hero.class:'Sword';const face=target.root.x>=a.root.x?1:-1;
   a.attackUntil=this.time.now+(kind==='Axe'?420:kind==='Dagger'?190:330);this.tweens.killTweensOf(a.weapon);
-  if(a.body.texture.key===SWORD_TEXTURE){a.body.setFlipX(face<0).play('sword-attack',true);return;}
-  a.weapon.setPosition(face*20,5).setAngle(-70*face);
-  if(kind==='Spear'){a.weapon.angle=90*face;this.tweens.add({targets:a.weapon,x:face*42,duration:130,yoyo:true});}
+  a.body.setFlipX(face<0);a.weapon.setScale(face,1).setPosition(face*a.hand.x,a.hand.y).setAngle(-70*face);
+  if(kind==='Spear'){a.weapon.angle=90*face;this.tweens.add({targets:a.weapon,x:face*(a.hand.x+26),duration:130,yoyo:true});}
   else if(kind==='Wand'){a.weapon.angle=15*face;const bolt=this.add.circle(a.root.x,a.root.y-20,6,0xd1b6ff).setDepth(1000);this.tweens.add({targets:bolt,x:target.root.x,y:target.root.y,duration:180,onComplete:()=>bolt.destroy()});}
   else this.tweens.add({targets:a.weapon,angle:110*face,duration:kind==='Axe'?210:kind==='Dagger'?90:160,yoyo:true,onComplete:()=>{if(a.weapon.active)a.weapon.angle=25*face;}});
-  const slash=this.add.graphics().setPosition(target.root.x,target.root.y-4).setDepth(1000);slash.lineStyle(crit?5:3,crit?0xffd66d:kind==='Wand'?0xc4a9ff:0xd9efff,.95).beginPath().arc(0,0,kind==='Axe'?43:33,-1.1,1.3).strokePath();this.tweens.add({targets:slash,alpha:0,scale:1.4,duration:240,onComplete:()=>slash.destroy()});
+  const slash=this.add.graphics().setPosition(target.root.x,target.root.y+4).setDepth(1000);slash.lineStyle(crit?5:3,crit?0xffd66d:kind==='Wand'?0xc4a9ff:0xd9efff,.95).beginPath().arc(0,0,kind==='Axe'?43:33,-1.1,1.3).strokePath();this.tweens.add({targets:slash,alpha:0,scale:1.4,duration:240,onComplete:()=>slash.destroy()});
  }
  private effect(e:GameEvent,s:GameState){
-  const target=this.actors.get(e.target);if(e.type==='hit'&&target){const attacker=e.target===0?this.actors.get(s.enemies[0]?.id):this.hero;const impact=()=>{if(!target.root.active)return;if(attacker?.root.active)this.swing(attacker,target,!!e.critical);const t=this.add.text(target.root.x,target.root.y-50,e.label||`${e.amount}${e.critical?'!':''}`,{fontFamily:'Georgia',fontSize:e.critical?'40px':'25px',fontStyle:'bold',color:e.target===0?'#eeaa9d':e.critical?'#ffdc76':'#f5e7ba',stroke:'#493023',strokeThickness:e.critical?6:4}).setOrigin(.5).setDepth(1100);this.tweens.add({targets:t,y:t.y-48,x:t.x+10,alpha:0,duration:800,onComplete:()=>t.destroy()});};
-   if(!s.nextRoomAt&&s.hero.class!=='Wand'&&e.target!==0&&this.hero.attackUntil<this.time.now&&Phaser.Math.Distance.Between(this.hero.root.x,this.hero.root.y,target.root.x,target.root.y)>100){this.walkPose(this.hero,this.time.now,target.root.x>=this.hero.root.x?1:-1);this.hero.attackUntil=this.time.now+220;this.tweens.add({targets:this.hero.root,x:target.root.x-64,y:target.root.y,duration:200,ease:'Sine.easeOut',onComplete:impact});}else impact();
+  const target=this.actors.get(e.target);if(e.type==='hit'&&target){const attacker=e.target===0?this.actors.get(s.enemies[0]?.id):this.hero;const impact=()=>{if(!target.root.active)return;if(attacker?.root.active)this.swing(attacker,target,!!e.critical);
+    const y=target.root.y+target.top-6,x=target.root.x+(Math.random()-.5)*16;
+    if(e.label)this.popup(x,y,e.label,e.label==='SLAM'?'#ff6a4d':'#c9d7ea','#141824',16);
+    else if(e.target===0)this.popup(x,y,`-${e.amount}`,'#ff8f7a','#3a0f12',18);
+    else if(e.critical)this.popup(x,y-6,`${e.amount}!`,'#ffd34d','#3a1d0e',34);
+    else this.popup(x,y,`${e.amount}`,'#fff4d6','#2a1a14',22);};
+   if(!s.nextRoomAt&&s.hero.class!=='Wand'&&e.target!==0&&this.hero.attackUntil<this.time.now&&Phaser.Math.Distance.Between(this.hero.root.x,this.hero.root.y,target.root.x,target.root.y)>100){this.walkPose(this.hero,this.time.now,target.root.x>=this.hero.root.x?1:-1);this.hero.attackUntil=this.time.now+220;this.tweens.add({targets:this.hero.root,x:target.root.x-this.reach(s,!!s.enemies.find(m=>m.id===e.target)?.boss),y:target.root.y,duration:200,ease:'Sine.easeOut',onComplete:impact});}else impact();
   }
-  if(e.type==='skill'){const dest=this.actors.get(e.target)||this.hero;const ring=this.add.circle(this.hero.root.x,this.hero.root.y,25,0xeac378,.04).setStrokeStyle(3,0xf1cf88,.8).setDepth(900);this.tweens.add({targets:ring,scale:s.hero.class==='Sword'?5:3,alpha:0,duration:500,onComplete:()=>ring.destroy()});if(s.hero.class==='Wand'){const bolt=this.add.circle(this.hero.root.x,this.hero.root.y-10,9,0xffb661).setDepth(1000);this.tweens.add({targets:bolt,x:dest.root.x,y:dest.root.y,duration:240,onComplete:()=>bolt.destroy()});}const t=this.add.text(this.hero.root.x,this.hero.root.y-78,e.label||'',{fontFamily:'Georgia',fontSize:'19px',color:'#f8d88c',stroke:'#161927',strokeThickness:4}).setOrigin(.5).setDepth(1100);this.tweens.add({targets:t,y:t.y-20,alpha:0,duration:1200,onComplete:()=>t.destroy()});}
+  if(e.type==='skill'){const dest=this.actors.get(e.target)||this.hero;const ring=this.add.circle(this.hero.root.x,this.hero.root.y+FEET,25,0xeac378,.04).setStrokeStyle(3,0xf1cf88,.8).setDepth(900);this.tweens.add({targets:ring,scale:s.hero.class==='Sword'?5:3,alpha:0,duration:500,onComplete:()=>ring.destroy()});if(s.hero.class==='Wand'){const bolt=this.add.circle(this.hero.root.x,this.hero.root.y-10,9,0xffb661).setDepth(1000);this.tweens.add({targets:bolt,x:dest.root.x,y:dest.root.y,duration:240,onComplete:()=>bolt.destroy()});}this.popup(this.hero.root.x,this.hero.root.y+this.hero.top-22,(e.label||'').toUpperCase(),'#f8d88c','#161927',15);}
   if(e.type==='pet'){const ring=this.add.circle(this.pet.x,this.pet.y,15).setStrokeStyle(2,0xa4e2a2,.8).setDepth(950);this.tweens.add({targets:ring,scale:3,alpha:0,duration:600,onComplete:()=>ring.destroy()});}
  }
 }

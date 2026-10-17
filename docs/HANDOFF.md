@@ -7,12 +7,12 @@
 
 เกม idle dungeon crawler (แนว LootMarch) เล่นในเบราว์เซอร์ ทำงานแบบ local อย่างเดียว ไม่มี backend
 - **Stack:** TypeScript 5.9 (strict) · Vite 7 · Phaser 3.90 · Vitest 3 · pnpm
-- **Git:** repo local บน branch `main` (ยังไม่มี remote) · baseline commit วันที่ 2026-10-17 · ติดตั้ง Git ไว้ที่ `C:\Program Files\Git` ถ้า shell เดิมหา `git` ไม่เจอ ให้เปิด terminal ใหม่
+- **Git:** repo local บน branch `main` · ตั้ง `origin` = `github.com/ckysuckseed00114/embermarch` แล้ว แต่ **push ยังไม่สำเร็จ** (GitHub ตอบว่า "Repository not found" ให้เช็กชื่อ repo/บัญชี) · baseline commit วันที่ 2026-10-17 · ติดตั้ง Git ไว้ที่ `C:\Program Files\Git` ถ้า shell เดิมหา `git` ไม่เจอ ให้เปิด terminal ใหม่
 
 ```powershell
 pnpm install
 pnpm dev      # http://127.0.0.1:5173/  (ต้องเป็น localhost/HTTPS เพราะใช้ Web Locks)
-pnpm test     # vitest — 31 tests
+pnpm test     # vitest — 57 tests
 pnpm build    # tsc --noEmit + vite build → dist/
 ```
 
@@ -30,9 +30,9 @@ src/core/                  ★ กฎเกมทั้งหมด — ห้�
   AFKManager.ts            offlineReward() + resume() (เลื่อน timer ทุกตัวตามเวลาที่หายไป)
   RoomTraversal.ts         ROOM_TRAVERSE_MS=6500 และเส้นทางเดินข้ามห้อง (ใช้ร่วม core กับ renderer)
 src/game/                  ★ presentation อย่างเดียว — ห้ามตัดสินดาเมจ/ของดรอป/เงิน
-  scenes/CatacombScene.ts  Phaser scene เดียวที่ใช้งาน: ห้อง 3 ส่วนวนกัน, actor, แอนิเมชันโจมตี, กล้อง
-  HeroArt.ts               pixel geometry ของ 5 อาชีพ → ใช้ทั้ง texture ใน Phaser และ SVG ใน UI
-  SwordSprite.ts           ตัด sprite sheet ของ Sword จาก public/assets/heroes/sword-source-v1.png (12 เฟรม, pivot กำหนดเอง)
+  scenes/CatacombScene.ts  Phaser scene เดียวที่ใช้งาน: ห้อง 3 ส่วนวนกัน, actor, เลขดาเมจ/ฮีล, วงเตือนบอส, ป้ายชื่อ, กล้อง
+  PixelSprites.ts          ★ ข้อมูล pixel art ทั้งหมด (string rows + palette): ฮีโร่ 5 อาชีพ × 2 เฟรมเดิน, อาวุธ, มอน 3 แบบ + บอส · ไม่มี Phaser จึง test ได้
+  HeroArt.ts               HERO_DESIGNS (ชื่อ/คำอธิบาย/สี) + heroSVG() วาด sprite เดียวกันเป็น SVG ให้ UI
 src/ui/
   UIManager.ts             HUD และ modal ทั้งหมด (HTML string), คีย์ลัด I/C/P/B/M/T/Q
   icons.ts                 SVG icon ของแถบเมนู
@@ -40,8 +40,8 @@ src/services/
   Storage.ts               LocalSaveRepository (key `embermarch.save.v1`) + validateSave()
   SoundFX.ts               เสียงสังเคราะห์ด้วย Web Audio (ไม่มีไฟล์เสียง)
 src/styles/                base.css · hud-immersive.css · characters.css
-tests/                     core.test.ts (25) · traversal.test.ts (6) — ทดสอบ core แบบ deterministic
-public/assets/heroes/      ภาพต้นฉบับ sprite
+tests/                     core.test.ts (31) · traversal.test.ts (6) · sprites.test.ts (20 — ความกว้างแถว/สีครบ)
+public/                    ตอนนี้ว่าง (sprite วาดจากโค้ดทั้งหมด)
 demos/lootmarch-enhanced/  prototype แยกต่างหาก (เปิด index.html ตรง ๆ ได้) ไม่ถูก build
 docs/                      เอกสารออกแบบ (ดูตารางข้อ 7)
 artifacts/                 ภาพหน้าจอ/ภาพทดสอบ ไม่ถูก build
@@ -76,18 +76,18 @@ Store.notify(state, events) → UIManager (HUD)  +  CatacombScene (วาด)  +
 - `.mcp.json` ชี้ไปที่ `https://api.pixellab.ai/mcp` ใช้ token จาก environment variable ระดับผู้ใช้ชื่อ **`PIXELLAB_API_TOKEN`** (ไม่มี key อยู่ในไฟล์โปรเจกต์)
 - เครื่องใหม่: ตั้งค่า `PIXELLAB_API_TOKEN` แล้วเปิด Claude Code session ใหม่ จากนั้นอนุมัติ MCP server `pixellab`
 - REST: `https://api.pixellab.ai/v2` (ใช้ header `Authorization: Bearer <token>`) · เช็กเครดิตที่ `GET /v2/balance` · คู่มือ: https://api.pixellab.ai/mcp/docs
-- บัญชีเป็น **trial** (ข้อมูลวันที่ 2026-10-17: เครดิต $0, generations 0/40) — เช็กก่อนสั่ง generate จำนวนมาก
+- บัญชีเป็น **trial และ generations หมดแล้ว** (ข้อมูลวันที่ 2026-10-17: 0/40, $0) ต้องเติมเครดิตก่อน แล้วรีสตาร์ทแอป Claude ให้โหลด env ใหม่ (ไม่งั้น MCP จะตอบ 401)
 - **ห้ามเรียก PixelLab จากโค้ดฝั่ง browser** ให้สร้าง asset ไว้ล่วงหน้าแล้วเก็บใน `public/assets/`
 
 ## 6. สถานะล่าสุด (2026-10-17)
 
 | ตรวจ | ผล |
 | --- | --- |
-| `pnpm test` | ✅ 37/37 ผ่าน |
+| `pnpm test` | ✅ 57/57 ผ่าน |
 | `pnpm build` (tsc strict + vite) | ✅ ผ่าน · Phaser chunk 1.2 MB / 332 KB gzip (มี warning chunk ใหญ่ ซึ่งเป็นเรื่องปกติ) |
 | ทดสอบในเบราว์เซอร์ (port 5176, เซฟแยก) | ✅ เลือก Sword → สู้ → ข้ามห้อง → เข้า region 2 ได้ · desktop 1024×768 และ mobile 375×812 แสดงผลถูก · tab ใหม่ไม่มี console error |
 
-**เสร็จแล้ว:** core ครบทุกระบบ · HUD แบบ immersive · 5 อาชีพแบบ procedural pixel · ห้องเชื่อมต่อกันและเดินข้ามประตูได้ · Sword ใช้ sprite sheet จริง (อาชีพอื่นยังเป็น procedural) · เสียง Web Audio · เชื่อม PixelLab MCP แล้ว
+**เสร็จแล้ว:** core ครบทุกระบบ · HUD แบบ immersive · ตัวละครสไตล์ pixel มุม 3/4 top-down (16px ขยาย 4×, บอส 5×) ครบ 5 อาชีพ + มอน 3 แบบ + บอส · เลขดาเมจ pixel font (คริติคอลมี `!`) · เลขฮีลสีเขียว · วงแดงเตือนก่อนบอส slam · แบนเนอร์ชื่อบอส + แถบ HP บอส (HTML) · ป้ายชื่อใต้ตัวละคร · ห้องเชื่อมต่อกัน · เสียง Web Audio · เชื่อม PixelLab MCP แล้ว (แต่เครดิตหมด)
 
 **ข้อสังเกต / ความเสี่ยง**
 - ยังไม่มี remote/backup นอกเครื่อง (ยังไม่ได้ติดตั้ง `gh`)
@@ -96,11 +96,13 @@ Store.notify(state, events) → UIManager (HUD)  +  CatacombScene (วาด)  +
 - โค้ดเขียนแบบอัดแน่นหนึ่งบรรทัดยาว (UIManager 22 KB, CatacombScene 19 KB, characters.css ทั้งไฟล์อยู่บรรทัดเดียว) ทำให้ diff/review ยาก ถ้าจะแก้ให้ใช้รูปแบบเดิม หรือตกลงกันก่อนว่าจะ format ใหม่
 - ไม่มี test ของ UI/renderer และไม่มี test ของ Web Lock
 - Marketplace มีปุ่มอยู่แต่ตั้งใจปิดไว้ (เงินจำลองเท่านั้น ห้ามผูกกับ wallet/token จริง ดูเหตุผลใน ARCHITECTURE.md)
-- sprite ของ Sword ตัดจาก concept sheet ที่ระยะห่างเฟรมไม่เท่ากัน pose อาจไม่สม่ำเสมอ
+- ป้ายชื่อแสดง "ชื่ออาชีพ · Lv" เพราะเซฟยังไม่มีชื่อผู้เล่น ถ้าจะใส่ชื่อเองต้องเพิ่มฟิลด์ในเซฟ (+ migration)
+- ฟอนต์ Silkscreen โหลดจาก Google Fonts ถ้าออฟไลน์จะใช้ monospace แทน
+- ภาพ Sword เดิมย้ายไปไว้ที่ `artifacts/sword-source-v1.png` แล้ว (ไม่ถูก build) และ `SwordSprite.ts` ถูกลบ (ถ้าต้องการกู้คืน ดูได้ใน git ที่ commit f51180b)
 
 **งานถัดไปที่แนะนำ**
 1. ตั้ง remote (เช่น GitHub private repo) แล้ว push
-2. ใช้ PixelLab สร้าง sprite sheet แบบ grid เท่ากันให้ทั้ง 5 อาชีพ (+ มอนสเตอร์/บอส) แล้วทำ loader ทั่วไปแทน `SwordSprite.ts` ที่ hardcode อยู่
+2. เพิ่มเฟรมโจมตีให้ sprite (ตอนนี้มีแค่ยืน/เดิน การโจมตีใช้วิธีหมุนอาวุธ) และทำบอสหลายแบบตาม region
 3. ปรับสมดุลเกมช่วง floor สูง (ยังไม่เคยทดสอบ) และทำ export/import เซฟ
 
 ## 7. เอกสารอื่น
@@ -110,7 +112,7 @@ Store.notify(state, events) → UIManager (HUD)  +  CatacombScene (วาด)  +
 | [ARCHITECTURE.md](ARCHITECTURE.md) | ขอบเขตแต่ละชั้น, สูตรทั้งหมด, ค่า balance, แนวทางย้ายขึ้น server |
 | [VALIDATION.md](VALIDATION.md) | ประวัติการตรวจแต่ละรอบ |
 | [CHARACTERS_AND_CONNECTED_ROOMS.md](CHARACTERS_AND_CONNECTED_ROOMS.md) | ดีไซน์ 5 อาชีพ + ลำดับการข้ามห้อง (TH) |
-| [SWORD_SPRITE_INTEGRATION.md](SWORD_SPRITE_INTEGRATION.md) | การตัดเฟรม sprite ของ Sword |
+| [SWORD_SPRITE_INTEGRATION.md](SWORD_SPRITE_INTEGRATION.md) | (เลิกใช้แล้ว) การตัดเฟรม sprite ของ Sword แบบเดิม |
 | [GAME_STRUCTURE_DOCS.md](GAME_STRUCTURE_DOCS.md) | data model ตามสเปกต้นฉบับ |
 | [CHARACTER_DESIGN_DOCS.md](CHARACTER_DESIGN_DOCS.md) | art direction |
 | [LOOTMARCH_DOCS.md](LOOTMARCH_DOCS.md) · [LOOTMARCH_VS_CODEX_COMPARISON.md](LOOTMARCH_VS_CODEX_COMPARISON.md) · [CODEX_PROMPT.md](CODEX_PROMPT.md) | เอกสารอ้างอิงเกมต้นแบบและ prompt เดิม |
@@ -127,6 +129,7 @@ Store.notify(state, events) → UIManager (HUD)  +  CatacombScene (วาด)  +
 
 ## 9. บันทึกการส่งต่อ (ใหม่สุดอยู่บน)
 
+- **2026-10-17 (4)** — เปลี่ยนตัวละครทั้งหมดเป็นสไตล์ใกล้ภาพอ้างอิง (LootMarch) แต่เป็นดีไซน์ต้นฉบับ: `PixelSprites.ts` ใหม่ ฮีโร่ 5 อาชีพมุม 3/4 พร้อมเดิน 2 เฟรม มอน 3 แบบ (Mossling/Crypt Sentinel/Cave Stalker) บอสใหม่ · เลขดาเมจ/ฮีล pixel font · วงเตือนบอส · แบนเนอร์และแถบ HP บอส · ป้ายชื่อ · เลิกใช้ Sword raster · test 57 · ทดสอบในเบราว์เซอร์ desktop + mobile แล้วไม่มี error · PixelLab trial เครดิตหมด จึงยังสร้างภาพไม่ได้
 - **2026-10-17 (3)** — จำกัดขนาดคลัง: inventory 300 / chest 150 ของที่ล้นจะ auto-salvage เป็น Bone (กันเซฟโตจนเกินโควตา LocalStorage) · UI แสดง x/300 · เพิ่ม 6 tests (รวม 37) · ทดสอบในเบราว์เซอร์ที่ 127.0.0.1:5176 (localhost:5176 ติด Web Lock จาก tab อื่น)
 - **2026-10-17 (2)** — smoke test ในเบราว์เซอร์ผ่าน · แก้บั๊กจอดำเมื่อ boot ตอน container มีขนาด 0 (`main.ts`) · เพิ่ม `.claude/launch.json` · PixelLab tools ต้องใช้ session ใหม่ถึงจะโหลด
 - **2026-10-17** — เชื่อม PixelLab MCP (`.mcp.json` + env `PIXELLAB_API_TOKEN`) · วิเคราะห์โครงสร้างแล้วสร้างเอกสารนี้ + `CLAUDE.md` · test 31/31 และ build ผ่าน · แก้ README/ARCHITECTURE ที่ข้อมูลเก่า (จำนวน test และเวลาข้ามห้อง) · ติดตั้ง Git, `git init`, baseline commit (ไม่มี token ใน repo, ignore `.pnpm-store`/`.env`)

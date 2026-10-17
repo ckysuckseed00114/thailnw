@@ -1,5 +1,7 @@
 # Sword artwork integration
 
+> **Superseded (2026-10-17):** all classes now use the code-drawn sprites in `src/game/PixelSprites.ts`. `SwordSprite.ts` was removed and the source image moved to `artifacts/sword-source-v1.png`. This page is kept for history.
+
 The Sword class now loads `public/assets/heroes/sword-source-v1.png` and uses registered raster animation frames in `src/game/SwordSprite.ts`.
 
 - Idle: frames 0–1, 3 fps. Walk: 2–5, 9 fps. Attack: 6–11, 18 fps.
