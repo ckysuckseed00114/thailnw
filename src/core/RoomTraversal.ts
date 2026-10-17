@@ -1,5 +1,6 @@
 // Authority and renderer share the duration; no client acknowledgement can skip combat.
-export const ROOM_TRAVERSE_MS=6500;
+// 3s keeps the walk through the door readable without stalling the fight (6.5s felt sluggish).
+export const ROOM_TRAVERSE_MS=3000;
 export const ROOM_STRIDE=1440;
 export function traversalProgress(now:number,until:number){return Math.max(0,Math.min(1,1-(until-now)/ROOM_TRAVERSE_MS));}
 export function traversalPoint(start:{x:number;y:number},offset:number,progress:number){

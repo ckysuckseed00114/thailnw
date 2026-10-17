@@ -40,7 +40,7 @@ HTML input → Store.dispatch → Authority / CombatEngine
 | Boss phases | At ≤2/3 and ≤1/3 HP, summon one guard per threshold; boss remains targetable and attacks on its normal 2.2s schedule while guards are alive; all enemies must die before the gate opens |
 | Base enemies | 42 HP / 3 damage; boss 170 HP / 10 damage |
 | Enemy timing | 2.4s attacks; boss 2.2s; every third boss hit is a 2.5× slam |
-| Room transition | 6.5s walk through the opened door (`ROOM_TRAVERSE_MS`); death respawns after 3s in current region room 1 |
+| Room transition | 3s walk through the opened door (`ROOM_TRAVERSE_MS`; was 6.5s, shortened 2026-10-17 because it felt sluggish); death respawns after 3s in current region room 1 |
 | Progression | Auto advance can be toggled; region 11 repeats until the seal is opened |
 | Rewards | Normal: 8 LM / 18 XP / 3 Bone × region; boss: 45 / 100 / 15 × region |
 | Item chance | 24% per normal kill, guaranteed per boss |
