@@ -5,8 +5,8 @@ import {migrateSave,validateSave} from '../src/services/Storage';
 import type {GameState} from '../src/core/models';
 
 const fight=()=>{const s=createState(1700000000000,11);const e=new CombatEngine(s);e.dispatch({type:'class',value:'Dagger'});
- // Tough enemies so nothing dies mid-test; skills off so only basic attacks land.
- s.enemies.forEach(m=>{m.hp=m.maxHp=100000;m.attackAt=s.now+1e9;});for(const id of Object.keys(s.cooldowns))e.dispatch({type:'autocast',id,value:false});return {s,e};};
+ // Tough enemies so nothing dies mid-test; skills off so only basic attacks land; one hall so all are in reach.
+ s.enemies.forEach(m=>{m.hp=m.maxHp=100000;m.attackAt=s.now+1e9;m.wave=0;});for(const id of Object.keys(s.cooldowns))e.dispatch({type:'autocast',id,value:false});return {s,e};};
 const hits=(ev:ReturnType<CombatEngine['tick']>)=>ev.filter(x=>x.type==='hit'&&x.target!==0).map(x=>x.target);
 
 describe('manual targeting',()=>{
@@ -17,5 +17,5 @@ describe('manual targeting',()=>{
  it('rejects unknown or dead targets and allows clearing',()=>{const {s,e}=fight();expect(()=>e.dispatch({type:'target',id:999999})).toThrow();s.enemies[1].hp=0;expect(()=>e.dispatch({type:'target',id:s.enemies[1].id})).toThrow();e.dispatch({type:'target',id:0});expect(s.target).toBe(0);});
  it('falls back to automatic when the target dies and resets on a new room',()=>{const {s,e}=fight();const pick=s.enemies[1].id;e.dispatch({type:'target',id:pick});s.enemies[1].hp=0;e.tick(50);expect(s.target).toBe(0);
   e.dispatch({type:'target',id:s.enemies[0].id});s.enemies.forEach(m=>m.hp=0);e.tick(50);e.tick(5000);e.tick(1500);expect(s.room).toBe(2);expect(s.target).toBe(0);});
- it('migrates v3 saves to v5 on automatic targeting',()=>{const {s}=fight();const v3=JSON.parse(JSON.stringify(s));v3.version=3;delete v3.target;const m=migrateSave(v3) as GameState;expect(m).toMatchObject({version:5,target:0});expect(validateSave(m)).toBe(true);});
+ it('migrates v3 saves to the current version on automatic targeting',()=>{const {s}=fight();const v3=JSON.parse(JSON.stringify(s));v3.version=3;delete v3.target;const m=migrateSave(v3) as GameState;expect(m).toMatchObject({version:6,target:0});expect(validateSave(m)).toBe(true);});
 });

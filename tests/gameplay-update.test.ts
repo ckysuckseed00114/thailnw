@@ -5,7 +5,7 @@ import {random} from '../src/core/DropTable';
 import {ROOMS} from '../src/core/models';
 
 function bossFight(){const s=createState(1700000000000,34),engine=new CombatEngine(s);engine.dispatch({type:'class',value:'Sword'});
- s.room=ROOMS;s.enemies=[];engine.tick(50);s.cooldowns['Sword-1']=s.now+1e9;s.attackAt=s.now+1e9;s.petAt=s.now+1e9;
+ s.room=ROOMS;s.enemies=[];engine.tick(50);engine.tick(s.hallAt-s.now);s.cooldowns['Sword-1']=s.now+1e9;s.attackAt=s.now+1e9;s.petAt=s.now+1e9;
  return {s,engine,boss:s.enemies[0]};}
 
 describe('eight-room boss encounter',()=>{

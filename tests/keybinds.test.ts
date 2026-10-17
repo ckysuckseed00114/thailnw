@@ -15,7 +15,7 @@ describe('key bindings',()=>{
  it('rejects unbindable keys and resets to defaults',()=>{expect(()=>bindKey('skill:0','Escape')).toThrow();bindKey('skill:0','Q');resetKeys();expect(keybinds.value).toEqual(DEFAULT_KEYS);});
 });
 describe('boss bar helpers',()=>{
- const boss=(hp:number,attacks=0):Enemy=>({id:1,name:'W',hp,maxHp:300,damage:1,boss:true,attackAt:0,stunnedUntil:0,attacks,summons:0});
+ const boss=(hp:number,attacks=0):Enemy=>({id:1,name:'W',hp,maxHp:300,damage:1,boss:true,attackAt:0,stunnedUntil:0,attacks,summons:0,wave:0});
  it('splits the bar into three phases',()=>{expect(bossPhase(boss(300))).toBe(1);expect(bossPhase(boss(200))).toBe(2);expect(bossPhase(boss(150))).toBe(2);expect(bossPhase(boss(100))).toBe(3);expect(bossPhase(boss(1))).toBe(3);});
  it('counts down to the every-third-hit slam',()=>{expect(hitsUntilSlam(boss(300,0))).toBe(3);expect(hitsUntilSlam(boss(300,1))).toBe(2);expect(hitsUntilSlam(boss(300,2))).toBe(1);expect(hitsUntilSlam(boss(300,3))).toBe(3);});
 });

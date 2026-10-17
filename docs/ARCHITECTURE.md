@@ -1,6 +1,6 @@
 # Embermarch architecture
 
-> โครงสร้าง UI และผลตรวจล่าสุด (17 ต.ค. 2026): [CURRENT_STRUCTURE_TH.md](CURRENT_STRUCTURE_TH.md) เอกสารนี้เน้นกฎเกมและขอบเขตระบบ; HUD ปัจจุบันใช้ Preact ร่วมกับ `UIManager` เดิม และรูปแบบเซฟเป็น v5
+> โครงสร้าง UI และผลตรวจล่าสุด (17 ต.ค. 2026): [CURRENT_STRUCTURE_TH.md](CURRENT_STRUCTURE_TH.md) เอกสารนี้เน้นกฎเกมและขอบเขตระบบ; HUD ปัจจุบันใช้ Preact ร่วมกับ `UIManager` เดิม และรูปแบบเซฟเป็น v6
 
 ## Boundaries
 
@@ -40,7 +40,7 @@ HTML input → Store.dispatch → Authority / CombatEngine
 | Boss phases | At ≤2/3 and ≤1/3 HP, summon one guard per threshold; boss remains targetable and attacks on its normal 2.2s schedule while guards are alive; all enemies must die before the gate opens |
 | Base enemies | 42 HP / 3 damage; boss 170 HP / 10 damage |
 | Enemy timing | 2.4s attacks; boss 2.2s; every third boss hit is a 2.5× slam |
-| Room transition | 3s walk through the opened door (`ROOM_TRAVERSE_MS`; was 6.5s, shortened 2026-10-17 because it felt sluggish); death respawns after 3s in current region room 1 |
+| Halls and walking | Each room has two hall waves (left: 1 monster, right: 2 or the boss). The next wave sleeps until the hero walks in: `HALL_WALK/moveSpeed` (2s at base 230 px/s). Room transition walks `ROOM_WALK/moveSpeed` (3s at base speed). Move speed comes from `stats()`, so speed gear shortens both; death respawns after 3s in current region room 1 |
 | Progression | Auto advance can be toggled; region 11 repeats until the seal is opened |
 | Rewards | Normal: 8 LM / 18 XP / 3 Bone × region; boss: 45 / 100 / 15 × region |
 | Item chance | 24% per normal kill, guaranteed per boss |

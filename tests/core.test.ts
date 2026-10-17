@@ -1,4 +1,4 @@
-﻿import {describe,it,expect} from 'vitest';
+import {describe,it,expect} from 'vitest';
 import {createState} from '../src/core/GameState';
 import {CombatEngine} from '../src/core/CombatEngine';
 import {forgeCost,itemPower,monsterStats,salvageValue,sealCost,stats,xpForLevel} from '../src/core/Formulas';
@@ -43,7 +43,7 @@ describe('player names',()=>{
  it('sets the name when the class is chosen, and refuses a bad one atomically',()=>{const a=createState();const e=new CombatEngine(a);expect(()=>e.dispatch({type:'class',value:'Axe',name:'!'})).toThrow();expect(a.started).toBe(false);expect(a.hero.name).toBe(DEFAULT_NAME);e.dispatch({type:'class',value:'Axe',name:' Rohit '});expect(a.hero.name).toBe('Rohit');expect(a.hero.class).toBe('Axe');});
  it('keeps the default name when none is given',()=>{const {s}=fixture();expect(s.hero.name).toBe(DEFAULT_NAME);});
  it('renames later and keeps the old name on invalid input',()=>{const {s,e}=fixture();e.dispatch({type:'name',value:'LuckyRohit'});expect(s.hero.name).toBe('LuckyRohit');expect(()=>e.dispatch({type:'name',value:'x'})).toThrow();expect(s.hero.name).toBe('LuckyRohit');expect(validateSave(JSON.parse(JSON.stringify(s)))).toBe(true);});
- it('migrates version 1 saves through to the current version with the default name',()=>{const {s}=fixture();const old=JSON.parse(JSON.stringify(s));old.version=1;delete old.hero.name;delete old.cooldowns;delete old.autoCast;old.skillAt=s.now+1234;expect(validateSave(old)).toBe(false);const migrated=migrateSave(old) as GameState;expect(migrated.version).toBe(5);expect(migrated.cooldowns).toEqual({'Sword-1':s.now+1234});expect(migrated.hero.name).toBe(DEFAULT_NAME);expect(migrated.hero.level).toBe(s.hero.level);expect(validateSave(migrated)).toBe(true);expect(old.version).toBe(1);});
+ it('migrates version 1 saves through to the current version with the default name',()=>{const {s}=fixture();const old=JSON.parse(JSON.stringify(s));old.version=1;delete old.hero.name;delete old.cooldowns;delete old.autoCast;old.skillAt=s.now+1234;expect(validateSave(old)).toBe(false);const migrated=migrateSave(old) as GameState;expect(migrated.version).toBe(6);expect(migrated.cooldowns).toEqual({'Sword-1':s.now+1234});expect(migrated.hero.name).toBe(DEFAULT_NAME);expect(migrated.hero.level).toBe(s.hero.level);expect(validateSave(migrated)).toBe(true);expect(old.version).toBe(1);});
  it('leaves unknown versions for validation to reject',()=>{const odd={version:99,hero:{}};expect(migrateSave(odd)).toBe(odd);expect(validateSave(migrateSave(odd))).toBe(false);});
 });
 describe('offline rewards and saves',()=>{

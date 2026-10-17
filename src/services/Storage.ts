@@ -21,6 +21,11 @@ const STEPS:Record<number,(s:Raw)=>Raw>={
    cooldowns:cooldowns&&Object.hasOwn(cooldowns,id)?{[id]:cooldowns[id]}:{},
    autoCast:autoCast&&Object.hasOwn(autoCast,id)?{[id]:autoCast[id]}:{}};
  },
+ // v6: hall waves and speed-timed walks. Monsters already on the field all fight in the current hall.
+ 5:s=>{
+  const nextRoomAt=Number(s.nextRoomAt),enemies=Array.isArray(s.enemies)?s.enemies.map(e=>({...e,wave:0})):s.enemies;
+  return {...s,version:6,enemies,wave:0,hallAt:0,walkFrom:nextRoomAt>3000?nextRoomAt-3000:0};
+ },
 };
 /** Upgrades older save formats in memory. Unknown shapes are returned untouched for validateSave to reject. */
 export function migrateSave(value:unknown):unknown{
@@ -32,7 +37,7 @@ const finite=(v:unknown)=>typeof v==='number'&&Number.isFinite(v)&&v>=0;
 function item(i:Item){return i&&Number.isSafeInteger(i.id)&&SLOTS.includes(i.slot)&&RARITIES.includes(i.rarity)&&typeof i.name==='string'&&i.name.length<100&&finite(i.base)&&finite(i.invested)&&Number.isInteger(i.forge)&&i.forge>=0&&i.forge<=60&&typeof i.locked==='boolean';}
 export function validateSave(value:unknown):value is GameState{
  try{
-  const s=value as GameState,base=createState();if(!s||s.version!==5)return false;if(!Number.isSafeInteger(s.target))return false;
+  const s=value as GameState,base=createState();if(!s||s.version!==6)return false;if(!Number.isSafeInteger(s.target)||!Number.isInteger(s.wave)||s.wave>1)return false;
   for(const [key,v] of Object.entries(base)){const actual=s[key as keyof GameState];if(typeof v==='number'&&!finite(actual))return false;if(typeof v==='boolean'&&typeof actual!=='boolean')return false;}
   if(cleanName(s.hero.name)!==s.hero.name||!CLASSES.includes(s.hero.class)||!PETS.includes(s.pet)||!Number.isInteger(s.hero.level)||s.hero.level<1||s.hero.level>1000||!finite(s.hero.xp)||!finite(s.hero.hp)||!Number.isInteger(s.hero.points)||s.hero.points<0)return false;
   if(!ATTRIBUTES.every(a=>Number.isInteger(s.hero.attributes[a])&&s.hero.attributes[a]>=0)||s.hero.attributes.Vampirism>20)return false;
@@ -43,7 +48,7 @@ export function validateSave(value:unknown):value is GameState{
   if(!PETS.every(p=>Number.isInteger(s.pets[p].level)&&s.pets[p].level>=1&&s.pets[p].level<=10&&finite(s.pets[p].xp)))return false;
   if(!Array.isArray(s.history)||s.history.length>1442||!s.history.every(h=>['at','seconds','lm','xp','bone','loot'].every(k=>finite(h[k as keyof typeof h]))))return false;
   if(!s.afk||!Object.values(s.afk).every(finite)||!Number.isInteger(s.afk.loot)||s.afk.loot>100000)return false;
-  if(!Array.isArray(s.enemies)||s.enemies.length>3||!s.enemies.every(e=>finite(e.id)&&finite(e.hp)&&finite(e.maxHp)&&finite(e.damage)&&finite(e.attackAt)&&finite(e.stunnedUntil)&&finite(e.attacks)&&Number.isInteger(e.summons)&&e.summons>=0&&e.summons<=2&&typeof e.boss==='boolean'&&typeof e.name==='string'))return false;
+  if(!Array.isArray(s.enemies)||s.enemies.length>3||!s.enemies.every(e=>finite(e.id)&&finite(e.hp)&&finite(e.maxHp)&&finite(e.damage)&&finite(e.attackAt)&&finite(e.stunnedUntil)&&finite(e.attacks)&&Number.isInteger(e.summons)&&e.summons>=0&&e.summons<=2&&Number.isInteger(e.wave)&&e.wave>=0&&e.wave<=1&&typeof e.boss==='boolean'&&typeof e.name==='string'))return false;
   if(s.shrine&&(!['Fury','Fortune','Haste','Renewal'].includes(s.shrine.kind)||!finite(s.shrine.until)))return false;
   const record=(o:unknown,ok:(v:unknown)=>boolean)=>!!o&&typeof o==='object'&&!Array.isArray(o)&&Object.entries(o).every(([k,v])=>ALL_SKILL_IDS.has(k)&&ok(v));
   if(!record(s.cooldowns,finite)||!record(s.autoCast,v=>typeof v==='boolean'))return false;

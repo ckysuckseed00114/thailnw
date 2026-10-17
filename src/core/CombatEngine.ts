@@ -2,8 +2,8 @@ import {ATTRIBUTES,CLASSES,MAX_CHEST,MAX_INVENTORY,NAME_MAX,PETS,cleanName,ROOMS
 import {forgeCost,itemPower,monsterStats,petXp,regionIndex,salvageValue,sealCost,stats,xpForLevel} from './Formulas';
 import {drop,random} from './DropTable';
 import type {Authority} from './GameState';
-import {ROOM_TRAVERSE_MS} from './RoomTraversal';
-import {focusEnemy} from './Targeting';
+import {HALL_WALK,ROOM_WALK,walkMs} from './RoomTraversal';
+import {activeEnemies,focusEnemy,isActive} from './Targeting';
 import {findSkill,isAuto,isUnlocked,primarySkill,readyAt,skillsFor,type SkillDef} from './Skills';
 
 export const QUESTS=[{id:'first',name:'A light in the dark',description:'Defeat 10 monsters',target:10,metric:'kills',lm:100,bone:60},{id:'warden',name:'Break the watch',description:'Defeat 3 bosses',target:3,metric:'bosses',lm:300,bone:200},{id:'veteran',name:'The long descent',description:'Defeat 100 monsters',target:100,metric:'kills',lm:800,bone:400}] as const;
@@ -17,10 +17,23 @@ export class CombatEngine implements Authority {
  private record(reward:Reward,seconds=0){const s=this.state;const minute=Math.floor(s.now/60000)*60000;let h=s.history.find(h=>h.at===minute);if(!h){h={at:minute,seconds:0,lm:0,xp:0,bone:0,loot:0};s.history.push(h);}h.seconds+=seconds;for(const k of ['lm','xp','bone','loot'] as const)h[k]+=reward[k];s.history=s.history.filter(h=>h.at>=s.now-86400000);}
  private spawn(){
   const s=this.state;const boss=s.room===ROOMS;const m=monsterStats(regionIndex(s),boss);
-  s.enemies=Array.from({length:boss?1:3},(_,i)=>({id:++s.serial,name:boss?'The Hollow Warden':['Mossling','Crypt Sentinel','Cave Stalker'][i],hp:m.hp,maxHp:m.hp,damage:m.damage,boss,attackAt:s.now+1800+i*400,stunnedUntil:0,attacks:0,summons:0}));
-  s.nextRoomAt=0;s.attackAt=s.now+400;s.target=0;
+  s.enemies=Array.from({length:boss?1:3},(_,i)=>({id:++s.serial,name:boss?'The Hollow Warden':['Mossling','Crypt Sentinel','Cave Stalker'][i],hp:m.hp,maxHp:m.hp,damage:m.damage,boss,attackAt:s.now+1800+i*400,stunnedUntil:0,attacks:0,summons:0,
+   // One monster holds the left hall; the rest (and the boss) wait in the right hall.
+   wave:boss||i>0?1:0}));
+  s.nextRoomAt=0;s.wave=0;s.hallAt=0;s.walkFrom=0;s.attackAt=s.now+400;s.target=0;
   if(random(s)<.08){const kinds:Shrine[]=['Fury','Fortune','Haste','Renewal'];s.shrine={kind:kinds[Math.floor(random(s)*4)],until:s.now+60000};this.note(`${s.shrine.kind} shrine · blessed for 60 seconds.`);}
   this.events.push({type:'room',target:0});
+  this.walkOn();
+ }
+ /** When the current hall is clear but the next still holds monsters, the hero walks there at move speed before they wake. */
+ private walkOn(){
+  const s=this.state;if(s.hallAt||!s.enemies.length||s.enemies.some(e=>isActive(s,e)))return;
+  s.walkFrom=s.now;s.hallAt=s.now+walkMs(HALL_WALK,stats(s).moveSpeed);
+ }
+ /** The walk reached the next hall: its monsters wake with fresh attack timers. */
+ private wake(){
+  const s=this.state;s.hallAt=0;s.wave=Math.min(...s.enemies.map(e=>e.wave));s.attackAt=s.now+400;
+  s.enemies.filter(e=>e.wave===s.wave).forEach((e,i)=>{e.attackAt=s.now+1200+i*400;});
  }
  private strike(ids:number[],mult:number,from?:{skill:SkillDef;stunMs?:number}){
   const s=this.state;const st=stats(s);
@@ -32,15 +45,15 @@ export class CombatEngine implements Authority {
   while(boss.summons<2&&ratio<=(2-boss.summons)/3){
    boss.summons++;
    const base=monsterStats(regionIndex(s),false),hp=Math.round(base.hp*1.25);
-   const guard={id:++s.serial,name:"Warden's Guard",hp,maxHp:hp,damage:base.damage*1.15,boss:false,attackAt:s.now+1200,stunnedUntil:0,attacks:0,summons:0};
+   const guard={id:++s.serial,name:"Warden's Guard",hp,maxHp:hp,damage:base.damage*1.15,boss:false,attackAt:s.now+1200,stunnedUntil:0,attacks:0,summons:0,wave:boss.wave};
    s.enemies.push(guard);this.events.push({type:'summon',target:guard.id,label:`Phase ${boss.summons+1} · Warden's Guard`});
    this.note(`The Warden calls a guard in phase ${boss.summons+1}!`);
   }
  }
- /** Only called while enemies exist (step returns early otherwise). */
+ /** Only called while active enemies exist (step returns early otherwise). */
  private focus(){return focusEnemy(this.state)!;}
  private cast(k:SkillDef){
-  const s=this.state;const e=k.effect;const f=this.focus();const alive=s.enemies.filter(m=>m.hp>0).sort((a,b)=>Number(b===f)-Number(a===f));
+  const s=this.state;const e=k.effect;const f=this.focus();const alive=activeEnemies(s).sort((a,b)=>Number(b===f)-Number(a===f));
   this.events.push({type:'skill',target:alive[0]?.id??0,label:k.name,skill:k.id,element:k.element});
   this.strike((e.target==='all'?alive:alive.slice(0,1)).map(m=>m.id),e.mult,{skill:k,stunMs:e.stunMs});
   s.cooldowns[k.id]=s.now+k.cooldown;
@@ -58,8 +71,9 @@ export class CombatEngine implements Authority {
   s.enemies=s.enemies.filter(e=>e.hp>0);if(s.target&&!s.enemies.some(e=>e.id===s.target))s.target=0;
   if(!s.enemies.length&&!s.nextRoomAt){
    if(s.room===ROOMS){const r=regionIndex(s);s.cleared=Math.max(s.cleared,r);s.unlocked=Math.max(s.unlocked,Math.min(s.floor*11,r+1));this.note('The Warden and guards are defeated. The gate opens.');}
-   s.nextRoomAt=s.now+ROOM_TRAVERSE_MS;
+   s.walkFrom=s.now;s.nextRoomAt=s.now+walkMs(ROOM_WALK,stats(s).moveSpeed);
   }
+  this.walkOn();
  }
  tick(ms:number){
   // Events raised by dispatch() since the last tick (e.g. a manual cast) are delivered with this tick's events.
@@ -75,12 +89,14 @@ export class CombatEngine implements Authority {
   if(s.shrine&&s.shrine.until<=s.now)s.shrine=null;
   if(s.shrine?.kind==='Renewal')s.hero.hp=Math.min(stats(s).maxHp,s.hero.hp+stats(s).maxHp*.03*dt/1000);
   if(!s.enemies.length){if(!s.nextRoomAt)this.spawn();else if(s.now>=s.nextRoomAt){if(s.room===ROOMS){s.room=1;if(s.autoAdvance&&s.region<11)s.region++;}else s.room++;this.spawn();}return;}
+  if(s.hallAt){if(s.now<s.hallAt)return;this.wake();}
+  if(!activeEnemies(s).length){this.kills();return;}
   if(s.now>=s.attackAt){this.strike([this.focus().id],1);s.attackAt=s.now+stats(s).interval;}
-  for(const k of skillsFor(s))if(isUnlocked(s,k)&&isAuto(s,k)&&s.now>=readyAt(s,k)&&s.enemies.some(m=>m.hp>0))this.cast(k);
+  for(const k of skillsFor(s))if(isUnlocked(s,k)&&isAuto(s,k)&&s.now>=readyAt(s,k)&&activeEnemies(s).length)this.cast(k);
   if(s.now>=s.petAt){const bonus=1+(s.pets[s.pet].level-1)*.1;const st=stats(s);if(s.pet==='Leafhopper')s.hero.hp=Math.min(st.maxHp,s.hero.hp+st.maxHp*.1*bonus);else if(s.pet==='Shellby')s.shield=true;else{const f=this.focus();this.strike([f.id],(s.pet==='Craboulder'?.9:1.2)*bonus);if(s.pet==='Craboulder')f.stunnedUntil=s.now+1000*bonus;}this.events.push({type:'pet',target:0,label:s.pet});s.petAt=s.now+8000/(s.pet==='Shellby'?bonus:1);}
   this.kills();
   for(const e of s.enemies){
-   if(s.now<e.attackAt||s.now<e.stunnedUntil)continue;
+   if(!isActive(s,e)||s.now<e.attackAt||s.now<e.stunnedUntil)continue;
    e.attacks++;const slam=e.boss&&e.attacks%3===0;const st=stats(s);
    // Basic attacks can be sidestepped too; slam retains its higher dodge chance.
    const dodgeChance=slam?st.dodge:Math.min(.35,.12+s.hero.attributes.Agility*.005);
@@ -88,7 +104,7 @@ export class CombatEngine implements Authority {
    if(shielded)s.shield=false;
    const amount=avoided?0:Math.round(e.damage*(slam?2.5:1));s.hero.hp=Math.max(0,s.hero.hp-amount);e.attackAt=s.now+(e.boss?2200:2400);
    this.events.push({type:'hit',target:0,source:e.id,amount,label:dodged?'DODGE':shielded?'SHIELD':blocked?'BLOCK':slam?'SLAM':undefined});
-   if(s.hero.hp<=0){s.respawnAt=s.now+3000;s.enemies=[];s.nextRoomAt=0;this.events.push({type:'death',target:0});this.note('Fallen, but not forgotten. Returning in 3 seconds.');break;}
+   if(s.hero.hp<=0){s.respawnAt=s.now+3000;s.enemies=[];s.nextRoomAt=0;s.hallAt=0;this.events.push({type:'death',target:0});this.note('Fallen, but not forgotten. Returning in 3 seconds.');break;}
   }
  }
  dispatch(c:Command){
@@ -98,13 +114,13 @@ export class CombatEngine implements Authority {
   if(c.type==='class'){check(CLASSES.includes(c.value),'Unknown class.');check(!s.started,'Your class is already chosen.');const name=c.name===undefined?s.hero.name:named(c.name);s.hero.name=name;s.hero.class=c.value;s.started=true;for(const k of skillsFor(s))s.cooldowns[k.id]=s.now+k.cooldown;this.spawn();return;}
   check(s.started,'Choose your class first.');
   if(c.type==='name'){s.hero.name=named(c.value);return;}
-  if(c.type==='target'){check(c.id===0||s.enemies.some(e=>e.id===c.id&&e.hp>0),'That target is gone.');s.target=c.id;return;}
+  if(c.type==='target'){check(c.id===0||activeEnemies(s).some(e=>e.id===c.id),'That target is gone or out of reach.');s.target=c.id;return;}
   if(c.type==='cast'||c.type==='autocast'){
    const k=findSkill(s,c.id);check(k,'That skill does not belong to your class.');if(!k)return;
    if(c.type==='autocast'){check(typeof c.value==='boolean','Invalid auto-cast setting.');s.autoCast[k.id]=c.value;return;}
    check(isUnlocked(s,k),`${k.name} unlocks at level ${k.unlock}.`);check(!s.respawnAt,'Wait until you respawn.');
    check(s.now>=readyAt(s,k),`${k.name} is cooling down.`);
-   check(s.enemies.some(m=>m.hp>0),'No target in range.');
+   check(activeEnemies(s).length,'No target in range.');
    this.cast(k);return;
   }
   if(c.type==='allocate'){check(ATTRIBUTES.includes(c.value)&&s.hero.points>0,'No attribute points available.');check(c.value!=='Vampirism'||s.hero.attributes.Vampirism<20,'Vampirism is capped at 20.');s.hero.points--;s.hero.attributes[c.value]++;}

@@ -31,7 +31,7 @@ src/core/                  ★ กฎเกมทั้งหมด — ห้�
   AFKManager.ts            offlineReward() + resume() (เลื่อน timer ทุกตัวตามเวลาที่หายไป)
   Targeting.ts             เป้าหมายที่ใช้ตีจริง (`focusEnemy`: ตัวที่ผู้เล่นเลือก ไม่งั้นตัวหน้าแถว) + `nextTarget`
   Skills.ts                สกิลเดียวต่อคลาส (ปุ่ม 1, cooldown 7 วิ), helper (`skillsFor`, `readyAt`, `isAuto`)
-  RoomTraversal.ts         ROOM_TRAVERSE_MS=3000 และเส้นทางเดินข้ามห้อง (ใช้ร่วม core กับ renderer)
+  RoomTraversal.ts         ความเร็วเดินพื้นฐาน (BASE_MOVE_SPEED=230), ระยะเดินโถง/ห้อง, walkMs() และเส้นทางเดิน (ใช้ร่วม core กับ renderer)
 src/game/                  ★ presentation อย่างเดียว — ห้ามตัดสินดาเมจ/ของดรอป/เงิน
   scenes/CatacombScene.ts  Phaser scene เดียวที่ใช้งาน: ห้อง 3 ส่วนวนกัน, actor, เลขดาเมจ/ฮีล, วงเตือนบอส, ป้ายชื่อ, กล้อง
   PixelSprites.ts          ข้อมูล pixel art แบบโค้ด: ฮีโร่เดิม 5 อาชีพ, อาวุธ, มอน 3 แบบ + บอส (Sword/Spear/Axe ในเกมใช้ PNG แล้ว)
@@ -71,7 +71,7 @@ Store.notify(state, events) → UIManager (HUD)  +  CatacombScene (วาด)  +
 1. **กฎเกมอยู่ใน `src/core` เท่านั้น** — renderer/UI แค่อ่าน state แล้ววาด ถ้าจะเพิ่มกลไกใหม่ ให้เพิ่ม `Command` ใน `models.ts` → จัดการใน `CombatEngine.dispatch` → เขียน test
 2. **ความสุ่มต้องผ่าน `random(s)`** ใน DropTable (seed อยู่ในเซฟ) ห้ามใช้ `Math.random()` ใน core ไม่งั้น test ไม่ deterministic
 3. **เวลาใน core ใช้ `s.now`** ไม่ใช่ `Date.now()` (ยกเว้น main.ts ตอน resume)
-4. **เปลี่ยนรูปแบบเซฟ** → แก้ `createState` + `validateSave` แล้วเพิ่มขั้นใน `STEPS` ของ `migrateSave()` (Storage.ts) พร้อม test · ตอนนี้ **`version:5`** (v1→v2 เพิ่มชื่อ, v2→v3 cooldown, v3→v4 target, v4→v5 สกิลเดียว/8 ห้อง/boss summons) ตอนโหลดจะ migrate ใน memory และเก็บเซฟเดิมครั้งเดียว · ชื่อ key `embermarch.save.v1` เป็นแค่ชื่อช่องเก็บ ไม่ใช่เวอร์ชัน ถ้าเซฟไม่ผ่าน validation เกมจะหยุดและไม่ลบเซฟ
+4. **เปลี่ยนรูปแบบเซฟ** → แก้ `createState` + `validateSave` แล้วเพิ่มขั้นใน `STEPS` ของ `migrateSave()` (Storage.ts) พร้อม test · ตอนนี้ **`version:6`** (v1→v2 เพิ่มชื่อ, v2→v3 cooldown, v3→v4 target, v4→v5 สกิลเดียว/8 ห้อง/boss summons, v5→v6 คลื่นมอนต่อโถง + เวลาเดิน) ตอนโหลดจะ migrate ใน memory และเก็บเซฟเดิมครั้งเดียว · ชื่อ key `embermarch.save.v1` เป็นแค่ชื่อช่องเก็บ ไม่ใช่เวอร์ชัน ถ้าเซฟไม่ผ่าน validation เกมจะหยุดและไม่ลบเซฟ
 5. timer ใหม่ใน state (`xxxAt`) ต้องเพิ่มใน `resume()` ของ AFKManager ด้วย ไม่งั้นจะเพี้ยนหลังกลับมาจาก offline
 
 ## 4. ระบบเกมสรุปสั้น
@@ -156,6 +156,7 @@ Store.notify(state, events) → UIManager (HUD)  +  CatacombScene (วาด)  +
 
 ## 9. บันทึกการส่งต่อ (ใหม่สุดอยู่บน)
 
+- **2026-10-18 (26)** — เดินในห้องเดียวกันด้วยความเร็วตัวละครจริง (แทนการวิ่ง/พุ่งของ (25)): เพิ่ม `stats().moveSpeed` (230 px/วิ; ไอเทม/บัฟเพิ่มความเร็วให้บวกตรงนี้) · มอนแบ่งเป็นคลื่นต่อโถง (`Enemy.wave`: 0 = โถงซ้าย 1 ตัว, 1 = โถงขวา; บอสอยู่โถงขวา) · คลื่นที่ยังไม่ตื่นไม่โจมตี เลือกเป้าไม่ได้ สกิลไม่โดน · เคลียร์โถงซ้ายแล้วฮีโร่เดินไปโถงขวา ใช้เวลา `HALL_WALK/moveSpeed` (2 วิ) พอถึงจุด x=790 มอนโถงขวาจึงตื่น (`hallAt`/`wake()`) · เดินข้ามห้องใช้ `ROOM_WALK/moveSpeed` (3 วิที่ความเร็วพื้นฐาน) และเก็บ `walkFrom` ให้ renderer/มินิแมพคำนวณความคืบหน้า · ฉากเดินตามนาฬิกาของ core (`hallPoint`) และเข้าหาเป้าด้วย `moveSpeed` · save v6 + migration (มอนเดิมอยู่คลื่น 0) + AFK resume เลื่อน `hallAt`/`walkFrom` · test 116/116, TypeScript/build ผ่าน · เบราว์เซอร์: เซฟเดิม migrate เป็น v6, ฮีโร่เดินโถงสม่ำเสมอ ~39 px ต่อ 0.2 วิ แล้วมอนตื่นตอนถึงจุด ไม่มี console error
 - **2026-10-18 (25)** — แก้ฮีโร่ "วาร์ป" ข้ามโถงในห้องเดียวกัน: พุ่งเข้าหาเฉพาะระยะ ≤ 240 px (`DASH_MAX`) โดยเวลาพุ่งขึ้นกับระยะ · ถ้าไกลกว่านั้นจะวิ่ง (430 px/วิ) · ท่าฟันระยะประชิด (ทั้งฮีโร่และมอน) เล่นเฉพาะตอนอยู่ในระยะ แต่ตัวเลขดาเมจยังขึ้น · วัดในเบราว์เซอร์แล้ว ขยับสูงสุด 18 px/เฟรม (เดิมราว 40–50) · แสดงผลอย่างเดียว
 - **2026-10-17 (24)** — บอสใหม่ "The Hollow Warden" (ยักษ์ผู้พิทักษ์วัด) จาก PixelLab: ยืน/เดิน/ทุบพื้น/เรียกผู้คุ้มกัน นำเข้าฉากแล้ว (`BossArt.ts`, `public/assets/hollow-warden/`) · ใช้ 15 generations (เหลือ 12) · เก็บสคริปต์ PixelLab ที่ใช้ซ้ำได้ใน `tools/pixellab/` · ดู [BOSS_PIXELLAB.md](BOSS_PIXELLAB.md) · test 111/111
 - **2026-10-17 (23)** — เปลี่ยน PixelLab API key เป็นตัวใหม่ใน env `PIXELLAB_API_TOKEN` (ไม่อยู่ใน repo)

@@ -8,7 +8,7 @@ const pad=(n:number)=>String(n).padStart(2,'0');
 export function Minimap({onOpenMap}:{onOpenMap:()=>void}){
  const s=useGame();const i=s.room-1;
  // While the gate is open the hero walks to the next node; after the warden the walk leaves the map.
- const p=s.nextRoomAt&&!s.respawnAt?traversalProgress(s.now,s.nextRoomAt):0;const to=NODES[Math.min(i+1,ROOMS-1)],from=NODES[i];
+ const p=s.nextRoomAt&&!s.respawnAt?traversalProgress(s.now,s.walkFrom,s.nextRoomAt):0;const to=NODES[Math.min(i+1,ROOMS-1)],from=NODES[i];
  const hero=i<ROOMS-1?[from[0]+(to[0]-from[0])*p,from[1]+(to[1]-from[1])*p]:from;
  const clock=new Date(s.now);
  return <div class="mm" aria-label="แผนที่ย่อ">

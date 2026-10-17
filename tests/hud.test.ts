@@ -10,5 +10,5 @@ describe('HUD quest tracker',()=>{
  it('puts claimable quests first and drops claimed ones',()=>{const s=fresh();s.bosses=3;const items=trackedItems(s);expect(items[1]).toMatchObject({id:'warden',ready:true});s.questClaims.push('warden','first');expect(trackedItems(s).map(i=>i.id)).toEqual(['room','veteran']);});
 });
 describe('boss objective',()=>{
- it('includes summoned guards in the room total',()=>{const s=createState(1700000000000,3);const e=new CombatEngine(s);e.dispatch({type:'class',value:'Wand'});s.room=ROOMS;s.enemies=[];e.tick(50);const boss=s.enemies[0];boss.hp=boss.maxHp*.6;s.cooldowns['Wand-1']=s.now;e.dispatch({type:'cast',id:'Wand-1'});expect(boss.summons).toBeGreaterThanOrEqual(1);expect(trackedItems(s)[0].total).toBe(1+boss.summons);});
+ it('includes summoned guards in the room total',()=>{const s=createState(1700000000000,3);const e=new CombatEngine(s);e.dispatch({type:'class',value:'Wand'});s.room=ROOMS;s.enemies=[];e.tick(50);e.tick(s.hallAt-s.now);const boss=s.enemies[0];boss.hp=boss.maxHp*.6;s.cooldowns['Wand-1']=s.now;e.dispatch({type:'cast',id:'Wand-1'});expect(boss.summons).toBeGreaterThanOrEqual(1);expect(trackedItems(s)[0].total).toBe(1+boss.summons);});
 });

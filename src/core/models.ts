@@ -10,15 +10,19 @@ export const PETS = ['Leafhopper','Shellby','Craboulder','Emberkit'] as const;
 export type Pet = typeof PETS[number];
 export type Shrine = 'Fury'|'Fortune'|'Haste'|'Renewal';
 export interface Item { id:number; slot:Slot; rarity:Rarity; name:string; base:number; forge:number; invested:number; locked:boolean }
-export interface Enemy { id:number; name:string; hp:number; maxHp:number; damage:number; boss:boolean; attackAt:number; stunnedUntil:number; attacks:number; summons:number }
+export interface Enemy { id:number; name:string; hp:number; maxHp:number; damage:number; boss:boolean; attackAt:number; stunnedUntil:number; attacks:number; summons:number;
+ /** Hall the enemy waits in (0 = left, 1 = right). Only the current wave fights; the rest wake when the hero walks in. */
+ wave:number }
 export interface Reward { lm:number; xp:number; bone:number; loot:number }
 export interface Performance extends Reward { at:number; seconds:number }
 export interface GameState {
- version:5; rng:number; serial:number; now:number; savedAt:number; started:boolean;
+ version:6; rng:number; serial:number; now:number; savedAt:number; started:boolean;
  hero:{ name:string; class:HeroClass; level:number; xp:number; hp:number; points:number; attributes:Record<Attribute,number> };
  lm:number; bone:number; inventory:Item[]; chest:Item[]; equipped:Partial<Record<Slot,number>>;
  floor:number; region:number; room:number; unlocked:number; cleared:number; autoAdvance:boolean; travelAt:number;
  enemies:Enemy[]; attackAt:number; petAt:number; respawnAt:number; nextRoomAt:number;
+ /** Active hall wave; hallAt ends the walk into the next hall (0 = not walking); walkFrom starts the current hall or room walk. */
+ wave:number; hallAt:number; walkFrom:number;
  /** Per-skill ready timestamps and auto-cast switches (missing = ready / auto on). See Skills.ts. */
  cooldowns:Record<string,number>; autoCast:Record<string,boolean>;
  /** Player-chosen enemy id for single-target attacks; 0 = automatic (front of the line). Cleared on each spawn. */

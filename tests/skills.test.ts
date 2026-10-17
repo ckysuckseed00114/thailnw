@@ -37,7 +37,7 @@ describe('one class skill, cooldown only',()=>{
 describe('save upgrade',()=>{
  it('keeps the class cooldown and removes obsolete skill slots from v4 saves',()=>{
   const {s}=hero('Dagger');const old=JSON.parse(JSON.stringify(s));old.version=4;old.cooldowns['Dagger-2']=s.now+30000;old.autoCast['Dagger-2']=false;
-  const next=migrateSave(old);expect(next).toMatchObject({version:5,cooldowns:{'Dagger-1':s.cooldowns['Dagger-1']}});
+  const next=migrateSave(old);expect(next).toMatchObject({version:6,cooldowns:{'Dagger-1':s.cooldowns['Dagger-1']}});
   expect(Object.keys((next as typeof s).cooldowns)).toEqual(['Dagger-1']);expect(validateSave(next)).toBe(true);
  });
  it('preserves an old boss encounter by moving room 5 to room 8',()=>{
