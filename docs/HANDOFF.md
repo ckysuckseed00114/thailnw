@@ -108,6 +108,7 @@ Store.notify(state, events) → UIManager (HUD)  +  CatacombScene (วาด)  +
 
 | ไฟล์ | เนื้อหา |
 | --- | --- |
+| [UI_UX_PLAN.md](UI_UX_PLAN.md) | ★ แผน UI/UX ธีม Thai Fantasy: แยก component, 4 เฟส, รหัสงาน 1.1–4.7, ข้อตัดสินใจ U1–U6 |
 | [ONLINE_PLAN.md](ONLINE_PLAN.md) | ★ แผนเปลี่ยนเป็นเกมออนไลน์: ตัด NFT/Token, Balance v2 (ตัวเลข baseline จาก sim), UI/UX ใหม่, สถาปัตยกรรม server, roadmap, ข้อตัดสินใจ D1–D8 |
 | [ARCHITECTURE.md](ARCHITECTURE.md) | ขอบเขตแต่ละชั้น, สูตรทั้งหมด, ค่า balance, แนวทางย้ายขึ้น server |
 | [VALIDATION.md](VALIDATION.md) | ประวัติการตรวจแต่ละรอบ |
@@ -129,6 +130,7 @@ Store.notify(state, events) → UIManager (HUD)  +  CatacombScene (วาด)  +
 
 ## 9. บันทึกการส่งต่อ (ใหม่สุดอยู่บน)
 
+- **2026-10-17 (7)** — ได้ภาพอ้างอิง UI แนว Thai Fantasy MMORPG 2 ชุด ("The Shattered Siam" pixel โทนมืด, "Siam Spirit Chronicles" chibi สว่าง) → เขียน [UI_UX_PLAN.md](UI_UX_PLAN.md): แยก component เทียบกับโค้ดปัจจุบัน, 4 เฟส 28 งาน (มีรหัสงาน), palette/ฟอนต์ไทย, ข้อตัดสินใจ U1–U6 (สไตล์ผสม, คง 5 อาชีพ, hotbar+auto, เพิ่ม MP, ชื่อสถานที่ไทย, Preact) · ยังไม่ได้เริ่มเขียนโค้ด
 - **2026-10-17 (6)** — ทิศทางใหม่: เปลี่ยนเป็นเกมออนไลน์และตัด NFT/Token ทั้งหมด → เขียน [ONLINE_PLAN.md](ONLINE_PLAN.md) (ยังเป็นร่าง รอยืนยัน D1–D8) · balance baseline จาก sim 12 ชม.: Floor 1 จบใน 8 นาที, ตาย 901 ครั้ง, forge โตแบบทวีคูณ (สคริปต์ sim ยังอยู่นอก repo จะย้ายเข้า `tools/sim` ในเฟส P1)
 - **2026-10-17 (5)** — ชื่อผู้เล่น: กรอกตอนเลือกอาชีพ และเปลี่ยนภายหลังได้ใน Character panel (Enter หรือปุ่ม Save name) แสดงบน HUD, หัว panel และป้ายใต้ตัวละคร · กติกาชื่อ (`cleanName`) 2–16 ตัว ตัวอักษร/ตัวเลขทุกภาษา รวมไทย + เว้นวรรค _ ' . - · เซฟ v1→v2 พร้อม backup · ช่องชื่อยังเก็บที่พิมพ์และตำแหน่ง caret ไว้แม้ panel จะ re-render · test 63 · ทดสอบในเบราว์เซอร์แล้ว: migrate เซฟจริง, เปลี่ยนชื่อระหว่างต่อสู้, ใส่ชื่อผิดแล้วขึ้นแจ้งเตือน, ชื่อไทย
 - **2026-10-17 (4)** — เปลี่ยนตัวละครทั้งหมดเป็นสไตล์ใกล้ภาพอ้างอิง (LootMarch) แต่เป็นดีไซน์ต้นฉบับ: `PixelSprites.ts` ใหม่ ฮีโร่ 5 อาชีพมุม 3/4 พร้อมเดิน 2 เฟรม มอน 3 แบบ (Mossling/Crypt Sentinel/Cave Stalker) บอสใหม่ · เลขดาเมจ/ฮีล pixel font · วงเตือนบอส · แบนเนอร์และแถบ HP บอส · ป้ายชื่อ · เลิกใช้ Sword raster · test 57 · ทดสอบในเบราว์เซอร์ desktop + mobile แล้วไม่มี error · PixelLab trial เครดิตหมด จึงยังสร้างภาพไม่ได้
