@@ -1,7 +1,7 @@
 import {describe,it,expect} from 'vitest';
 import {CombatEngine} from '../src/core/CombatEngine';
 import {createState} from '../src/core/GameState';
-import {BASE_MOVE_SPEED,HALL_WALK,ROOM_ENTRY_X,ROOM_TRAVERSE_MS,ROOM_STRIDE,ROOM_WALK,TRAVERSE_BREAKS,traversalPoint,traversalProgress,walkMs} from '../src/core/RoomTraversal';
+import {BASE_MOVE_SPEED,DOOR_X,ENTRY_WALK,HALL_WALK,ROOM_TRAVERSE_MS,ROOM_STRIDE,ROOM_WALK,WAVE_X,traversalProgress,walkMs,walkPoint} from '../src/core/RoomTraversal';
 import {resume} from '../src/core/AFKManager';
 import {stats} from '../src/core/Formulas';
 import {focusEnemy} from '../src/core/Targeting';
@@ -15,7 +15,10 @@ describe('connected room traversal',()=>{
  it('crosses the boss gate into the next region',()=>{const {s,e}=cleared();s.room=8;e.tick(5000);e.tick(1500);expect(s.region).toBe(2);expect(s.room).toBe(1);});
  it('times the room walk from move speed, so a faster hero arrives sooner',()=>{const s=createState(1700000000000,42),e=new CombatEngine(s);e.dispatch({type:'class',value:'Sword'});
   expect(stats(s).moveSpeed).toBe(BASE_MOVE_SPEED);s.enemies.forEach(m=>m.hp=0);e.tick(50);expect(s.nextRoomAt-s.walkFrom).toBe(walkMs(ROOM_WALK,BASE_MOVE_SPEED));
-  expect(walkMs(ROOM_WALK,BASE_MOVE_SPEED*1.5)).toBe(2000);});
+  expect(walkMs(ROOM_WALK,BASE_MOVE_SPEED*1.5)).toBe(Math.round(walkMs(ROOM_WALK,BASE_MOVE_SPEED)/1.5));});
+ it('keeps walking past the checkpoint into the next room, whose first hall wakes on arrival',()=>{const {s,e}=cleared();e.tick(ROOM_TRAVERSE_MS);expect(s.room).toBe(2);
+  expect(s.hallAt-s.walkFrom).toBe(walkMs(ENTRY_WALK(0),BASE_MOVE_SPEED));expect(ENTRY_WALK(0)).toBe(ROOM_STRIDE+WAVE_X[0]-DOOR_X);expect(focusEnemy(s)).toBeUndefined();
+  e.tick(s.hallAt-s.now);expect(focusEnemy(s)?.wave).toBe(0);});
 });
 function hallFight(){const s=createState(1700000000000,42),e=new CombatEngine(s);e.dispatch({type:'class',value:'Sword'});for(const id of Object.keys(s.cooldowns))e.dispatch({type:'autocast',id,value:false});return {s,e};}
 describe('walking through a room hall by hall',()=>{
@@ -33,5 +36,6 @@ describe('walking through a room hall by hall',()=>{
   const m=migrateSave(old) as typeof s;expect(m).toMatchObject({version:6,wave:0,hallAt:0});expect(m.enemies.every(x=>x.wave===0)).toBe(true);expect(validateSave(m)).toBe(true);});
 });
 describe('room path',()=>{
- it('has a continuous path through the door to the next room',()=>{const start={x:950,y:520};expect(traversalPoint(start,0,0)).toEqual(start);expect(traversalPoint(start,0,1)).toEqual({x:ROOM_STRIDE+ROOM_ENTRY_X,y:465});for(const boundary of TRAVERSE_BREAKS.slice(0,3)){const a=traversalPoint(start,0,boundary-.00001),b=traversalPoint(start,0,boundary+.00001);expect(Math.hypot(a.x-b.x,a.y-b.y)).toBeLessThan(1);}expect(traversalProgress(500,4000,7000)).toBe(0);expect(traversalProgress(5500,4000,7000)).toBe(.5);expect(traversalProgress(7000,4000,7000)).toBe(1);});
+ it('walks at an even pace with no pauses',()=>{const start={x:900,y:520},to={x:DOOR_X,y:465};expect(walkPoint(start,to,0)).toEqual(start);expect(walkPoint(start,to,1)).toEqual(to);
+  const step=(p:number)=>{const a=walkPoint(start,to,p),b=walkPoint(start,to,p+.1);return Math.hypot(b.x-a.x,b.y-a.y);};for(const p of [0,.3,.6,.9])expect(step(p)).toBeCloseTo(step(0),6);expect(traversalProgress(500,4000,7000)).toBe(0);expect(traversalProgress(5500,4000,7000)).toBe(.5);expect(traversalProgress(7000,4000,7000)).toBe(1);});
 });

@@ -8,7 +8,7 @@ import {SWORD_ART,swordWalkPath,swordAttackPath} from '../SwordArt';
 import {AXE_ART,axeWalkPath,axeAttackPath} from '../AxeArt';
 import {SPEAR_ART,spearIdlePath,spearWalkPath,spearAttackPath} from '../SpearArt';
 import {BOSS_ART,bossFramePath,bossTexture} from '../BossArt';
-import {HALL_ENTRY_X,ROOM_ENTRY_X,ROOM_STRIDE,hallPoint,traversalPoint,traversalProgress} from '../../core/RoomTraversal';
+import {DOOR_X,ROOM_ENTRY_X,ROOM_STRIDE,WAVE_X,traversalProgress,walkPoint} from '../../core/RoomTraversal';
 import {focusEnemy,isActive} from '../../core/Targeting';
 import type {Element} from '../../core/Skills';
 import {ELEMENT_COLOR} from '../../ui/theme/elements';
@@ -27,7 +27,7 @@ const importedArt=(kind:HeroClass)=>kind==='Sword'?SWORD_ART:kind==='Axe'?AXE_AR
 export class CatacombScene extends Phaser.Scene {
  private actors=new Map<number,Actor>();private hero!:Actor;private pet!:Phaser.GameObjects.Container;private caption!:Phaser.GameObjects.Text;private warn!:Phaser.GameObjects.Graphics;private seal!:Phaser.GameObjects.Container;private unsubscribe?:()=>void;private room='';
  private reduced=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
- private sections:{root:Phaser.GameObjects.Container;top:Phaser.GameObjects.Rectangle;bottom:Phaser.GameObjects.Rectangle}[]=[];
+ private sections:{root:Phaser.GameObjects.Container}[]=[];
  private journey=0;private traversal:{x:number;y:number;from:number;until:number}|null=null;private hallWalk:{x:number;y:number}|null=null;private wasDead=false;private travelAt=0;private lastStateAt=0;
  private lastHp=-1;private healed=0;private healShownAt=0;
  private popups=0;private stacks=new Map<number,{until:number;n:number}>();
@@ -48,10 +48,9 @@ export class CatacombScene extends Phaser.Scene {
  create(){
   for(let i=0;i<3;i++){
    const before=new Set(this.children.list);this.environment();
-   const frame=this.add.graphics();frame.fillStyle(0x121a2b).fillRect(1323,384,48,18).fillRect(1323,528,48,18);frame.lineStyle(3,0xa38b60).strokeRect(1327,388,40,12).strokeRect(1327,530,40,12);
-   const top=this.add.rectangle(1347,400,27,65,0x625b50).setOrigin(.5,0).setStrokeStyle(3,0xc1a06b);
-   const bottom=this.add.rectangle(1347,530,27,65,0x625b50).setOrigin(.5,1).setStrokeStyle(3,0xc1a06b);
-   const children=this.children.list.filter(c=>!before.has(c));const root=this.add.container((i-1)*ROOM_STRIDE,0,children);this.sections.push({root,top,bottom});
+   // No door: the passage stays open and its floor rune marks the checkpoint into the next room.
+   this.checkpoint(this.add.graphics(),.45).setPosition(DOOR_X,0);
+   const children=this.children.list.filter(c=>!before.has(c));const root=this.add.container((i-1)*ROOM_STRIDE,0,children);this.sections.push({root});
   }
   this.makeTextures();this.warn=this.add.graphics().setDepth(5);this.seal=this.makeSeal();this.hero=this.figure(0,ROOM_ENTRY_X,465,false,true);
   this.pet=this.add.container(ROOM_ENTRY_X-50,505,[this.add.ellipse(0,17,26,9,0x000000,.35),this.add.image(0,0,'companion').setScale(2.5)]);
@@ -120,7 +119,7 @@ export class CatacombScene extends Phaser.Scene {
   */
  private spawnSpot(e:GameState['enemies'][number],n:number){
   const o=this.journey*ROOM_STRIDE;
-  if(e.boss)return {x:o+1010,y:465};
+  if(e.boss)return {x:o+930,y:465};
   if(e.wave===0)return {x:o+430+n*110,y:n%2?510:450};
   return {x:o+880+n*150,y:n%2?520:410};
  }
@@ -128,12 +127,13 @@ export class CatacombScene extends Phaser.Scene {
   if(!this.hero)return;const s=this.store.state,dt=Math.min(delta,50)/1000,foe=focusEnemy(s),target=foe&&this.actors.get(foe.id);
   this.hero.root.setDepth(this.hero.root.y);const cam=this.cameras.main;const walking=!!this.traversal||!!this.hallWalk;const focus=this.scale.width<761||this.traversal?this.hero.root.x+(walking?170:70):this.journey*ROOM_STRIDE+750;cam.centerOn(Phaser.Math.Linear(cam.midPoint.x,focus,1-Math.exp(-dt*5)),450);
   if(this.traversal&&s.nextRoomAt&&!s.respawnAt){
-   const progress=traversalProgress(s.now+Math.max(0,time-this.lastStateAt),this.traversal.from,this.traversal.until);const position=traversalPoint(this.traversal,this.journey*ROOM_STRIDE,progress);this.hero.root.setPosition(position.x,position.y);this.hero.attackUntil=0;this.walkPose(this.hero,time,1);this.caption.x=this.hero.root.x;
-   this.sections[1].top.setScale(1,1-Math.min(1,progress/.12));this.sections[1].bottom.setScale(1,1-Math.min(1,progress/.12));
+   // Even-paced walk to the checkpoint; the core moves the room on when the hero reaches it.
+   const progress=traversalProgress(s.now+Math.max(0,time-this.lastStateAt),this.traversal.from,this.traversal.until);const position=walkPoint(this.traversal,{x:this.journey*ROOM_STRIDE+DOOR_X,y:465},progress);this.hero.root.setPosition(position.x,position.y);this.hero.attackUntil=0;this.walkPose(this.hero,time,1);this.caption.x=this.hero.root.x;
   }else if(s.started&&!s.respawnAt){
    // Walking into the next hall follows the core's clock (distance ÷ move speed); its monsters wake when the walk ends.
-   if(this.hallWalk&&s.hallAt){const position=hallPoint(this.hallWalk,this.journey*ROOM_STRIDE,traversalProgress(s.now+Math.max(0,time-this.lastStateAt),s.walkFrom,s.hallAt));this.hero.attackUntil=0;this.walkPose(this.hero,time,position.x>=this.hero.root.x?1:-1);this.hero.root.setPosition(position.x,position.y);}
-   else if(target&&foe){const side=target.root.x>=this.hero.root.x?1:-1;this.move(this.hero,target.root.x-side*this.reach(s,foe.boss),target.root.y,dt,time,stats(s).moveSpeed);}
+   if(this.hallWalk&&s.hallAt){const wave=Math.min(...s.enemies.map(e=>e.wave)),position=walkPoint(this.hallWalk,{x:this.journey*ROOM_STRIDE+(WAVE_X as readonly number[])[wave],y:465},traversalProgress(s.now+Math.max(0,time-this.lastStateAt),s.walkFrom,s.hallAt));this.hero.attackUntil=0;this.walkPose(this.hero,time,position.x>=this.hero.root.x?1:-1);this.hero.root.setPosition(position.x,position.y);}
+   // The hero holds the hall's fighting spot and lets monsters come in, so every walk starts where the core times it from.
+   else if(target&&foe){const side=target.root.x>=this.hero.root.x?1:-1,reach=this.reach(s,foe.boss);if(Phaser.Math.Distance.Between(this.hero.root.x,this.hero.root.y,target.root.x,target.root.y)>reach+60)this.move(this.hero,target.root.x-side*reach,target.root.y,dt,time,stats(s).moveSpeed);else if(this.hero.attackUntil<=time){this.hero.body.setFlipX(side<0);this.idle(this.hero,time);}}
    for(const e of s.enemies){const a=this.actors.get(e.id);if(!a||a.attackUntil>time)continue;
    // Sleeping waves keep to their hall; awake enemies hold position until the hero targets them or comes close.
    if(!isActive(s,e)||!e.boss&&e.id!==foe?.id&&Phaser.Math.Distance.Between(a.root.x,a.root.y,this.hero.root.x,this.hero.root.y)>AGGRO_RANGE){const hx=a.home.x+Math.sin((time+a.phase)/1300)*16,hy=a.home.y+Math.cos((time+a.phase)/1700)*8;if(Phaser.Math.Distance.Between(a.root.x,a.root.y,hx,hy)>6)this.move(a,hx,hy,dt,time,18);else this.idle(a,time);this.anticipate(a,e,s,time);continue;}const gap=e.boss?112:a.kind==='Cave Stalker'?88:78;const weave=e.boss?10:a.kind==='Cave Stalker'?29:a.kind==='Mossling'?17:8;const y=Phaser.Math.Clamp(this.hero.root.y+Math.sin((time+a.phase)/(e.boss?780:540))*weave,400,535);const x=this.hero.root.x+gap+Math.sin((time+a.phase)/920)*(e.boss?7:12);const speed=e.boss?36:a.kind==='Cave Stalker'?56:a.kind==='Mossling'?44:29;if(Phaser.Math.Distance.Between(a.root.x,a.root.y,x,y)>gap*.18&&e.stunnedUntil<s.now)this.move(a,x,y,dt,time,speed);else this.idle(a,time);this.anticipate(a,e,s,time);}}else this.idle(this.hero,time);
@@ -183,19 +183,22 @@ export class CatacombScene extends Phaser.Scene {
   if(e.boss){a.body.setTexture(this.bossWindup(p));a.body.setScale(base);return;}
   a.body.y+=3*p;a.body.setScale(base*(1+.04*p),base*(1-.07*p));a.weapon.angle=face*(22-70*p);
  }
- /** Rune seal across the passage into the right hall: crossing it is what wakes the hall's monsters. */
- private makeSeal(){
-  const g=this.add.graphics();g.fillStyle(0x7fd8ff,.1).fillRect(-10,352,20,224).fillStyle(0x7fd8ff,.35).fillRect(-2,352,4,224);
-  for(let y=366;y<576;y+=30){g.fillStyle(0x0b1530,.9).fillPoints([{x:0,y:y-9},{x:9,y},{x:0,y:y+9},{x:-9,y}],true);g.lineStyle(2,0x9fe4ff,.95).strokePoints([{x:0,y:y-9},{x:9,y},{x:0,y:y+9},{x:-9,y}],true);g.fillStyle(0xdffaff).fillRect(-2,y-2,4,4);}
-  return this.add.container(HALL_ENTRY_X-24,0,[g]).setDepth(4).setVisible(false);
+ /** Floor rune across the passage between rooms (y 400–528). Drawn dim in every room; the live copy glows on the way out. */
+ private checkpoint(g:Phaser.GameObjects.Graphics,alpha:number){
+  g.fillStyle(0x7fd8ff,.1*alpha).fillRect(-10,400,20,128).fillStyle(0x7fd8ff,.4*alpha).fillRect(-2,400,4,128);
+  for(let y=412;y<528;y+=26){const d=[{x:0,y:y-8},{x:8,y},{x:0,y:y+8},{x:-8,y}];g.fillStyle(0x0b1530,.9*alpha).fillPoints(d,true);g.lineStyle(2,0x9fe4ff,alpha).strokePoints(d,true);g.fillStyle(0xdffaff,alpha).fillRect(-2,y-2,4,4);}
+  return g;
  }
- /** Dim while the next hall sleeps; brightens as the hero walks up to it. Hidden once every hall is awake. */
+ private makeSeal(){return this.add.container(DOOR_X,0,[this.checkpoint(this.add.graphics(),1)]).setDepth(4).setVisible(false);}
+ /** The checkpoint lights up once the room is clear and brightens as the hero walks to it. */
  private sealState(s:GameState,time:number){
-  const show=s.started&&!s.respawnAt&&!s.nextRoomAt&&s.enemies.some(e=>!isActive(s,e));this.seal.setVisible(show);if(!show)return;
-  this.seal.x=this.journey*ROOM_STRIDE+HALL_ENTRY_X-24;
-  const p=s.hallAt?traversalProgress(s.now+Math.max(0,time-this.lastStateAt),s.walkFrom,s.hallAt):0,pulse=this.reduced?0:Math.sin(time/(s.hallAt?140:520));
-  this.seal.setAlpha(s.hallAt?.55+.4*p+.05*pulse:.32+.08*pulse);
+  const show=s.started&&!s.respawnAt&&!!s.nextRoomAt;this.seal.setVisible(show);if(!show)return;
+  this.seal.x=this.journey*ROOM_STRIDE+DOOR_X;
+  const p=traversalProgress(s.now+Math.max(0,time-this.lastStateAt),s.walkFrom,s.nextRoomAt),pulse=this.reduced?0:Math.sin(time/140);
+  this.seal.setAlpha(.45+.5*p+.05*pulse);
  }
+ /** Burst when the hero walks past the checkpoint into the next room. */
+ private flashCheckpoint(x:number){const flash=this.add.rectangle(x,464,24,136,0xbff0ff,.6).setDepth(900);this.fade(flash,450,{scaleX:5});}
  /** Sleeping enemies are dimmed with a drifting "z"; waking clears both. */
  private sleep(a:Actor,asleep:boolean){
   if(asleep&&!a.zz){a.body.setTint(0x7c87ad);a.zz=this.add.text(32,a.top-40,'z',{fontFamily:FONT,fontSize:'22px',fontStyle:'bold',color:'#d4ddff',stroke:'#0b1020',strokeThickness:5}).setOrigin(.5);a.root.add(a.zz);}
@@ -214,10 +217,11 @@ export class CatacombScene extends Phaser.Scene {
   const room=`${s.floor}:${s.region}:${s.room}`;
   const relocated=s.travelAt!==this.travelAt;const crossed=!!this.traversal&&!s.nextRoomAt&&!s.respawnAt&&s.enemies.length>0&&!relocated&&room.split(':')[0]===this.room.split(':')[0];this.travelAt=s.travelAt;
   if(room!==this.room||crossed||relocated||(this.wasDead&&!s.respawnAt)){
-   if(crossed){this.journey++;this.hero.root.setPosition(this.journey*ROOM_STRIDE+ROOM_ENTRY_X,465);}
+   // Rooms join up, so crossing keeps the hero where they are: the checkpoint becomes the new room's doorway.
+   if(crossed){this.journey++;this.flashCheckpoint(this.journey*ROOM_STRIDE+DOOR_X-ROOM_STRIDE);}
    else{this.journey=0;this.hero.root.setPosition(ROOM_ENTRY_X,465);this.pet.setPosition(ROOM_ENTRY_X-50,505);}
    this.room=room;this.traversal=null;this.hallWalk=null;this.tweens.killTweensOf(this.hero.root);
-   this.sections.forEach((section,i)=>{section.root.x=(this.journey+i-1)*ROOM_STRIDE;section.top.setScale(1,i===0?0:1);section.bottom.setScale(1,i===0?0:1);});
+   this.sections.forEach((section,i)=>{section.root.x=(this.journey+i-1)*ROOM_STRIDE;});
    this.caption.x=this.journey*ROOM_STRIDE+720;
   }
   this.wasDead=!!s.respawnAt;
@@ -228,8 +232,8 @@ export class CatacombScene extends Phaser.Scene {
   this.hero.plate.setText(`${s.hero.name} · Lv ${s.hero.level}`);
   if(s.respawnAt||this.lastHp<0)this.healed=0;else if(s.hero.hp>this.lastHp)this.healed+=s.hero.hp-this.lastHp;this.lastHp=s.respawnAt?-1:s.hero.hp;
   this.hero.root.setAlpha(s.respawnAt?.3:1);this.bar(this.hero,s.hero.hp/stats(s).maxHp,0x9bc9a2);
-  s.enemies.forEach((e,i)=>{if(!this.actors.has(e.id)){const at=this.spawnSpot(e,s.enemies.filter(m=>m.wave===e.wave&&m.id<e.id).length);this.figure(e.id,at.x,at.y,e.boss,false,e.name);}const a=this.actors.get(e.id)!;this.bar(a,e.hp/e.maxHp,e.boss?0xe0604a:0x8eabb4);a.ring.setVisible(s.target===e.id);this.sleep(a,!isActive(s,e));});
-  this.caption.setText(s.respawnAt?`FALLEN · RETURNING IN ${Math.ceil((s.respawnAt-s.now)/1000)}s`:s.nextRoomAt?'GATE OPEN  ·  ENTERING THE NEXT CHAMBER':s.hallAt?'CROSSING INTO THE NEXT HALL':'');
+  s.enemies.forEach((e,i)=>{if(!this.actors.has(e.id)){const at=this.spawnSpot(e,s.enemies.filter(m=>m.wave===e.wave&&m.id<e.id).length);const fresh=this.figure(e.id,at.x,at.y,e.boss,false,e.name);if(crossed&&!this.reduced){fresh.root.setAlpha(0);this.tweens.add({targets:fresh.root,alpha:1,duration:450});}}const a=this.actors.get(e.id)!;this.bar(a,e.hp/e.maxHp,e.boss?0xe0604a:0x8eabb4);a.ring.setVisible(s.target===e.id);this.sleep(a,!isActive(s,e));});
+  this.caption.setText(s.respawnAt?`FALLEN · RETURNING IN ${Math.ceil((s.respawnAt-s.now)/1000)}s`:s.nextRoomAt?'ROOM CLEAR  ·  ON TO THE NEXT CHAMBER':'');
   for(const e of events)this.effect(e,s);const ids=new Set(s.enemies.map(e=>e.id));for(const [id,a] of this.actors)if(id&&!ids.has(id)){this.actors.delete(id);this.time.delayedCall(330,()=>{if(a.root.active)this.tweens.add({targets:a.root,alpha:0,y:a.root.y+10,duration:300,onComplete:()=>{this.tweens.killTweensOf(a.weapon);a.root.destroy();}});});}
  }
  private bar(a:Actor,f:number,c:number){const y=a.top-10;a.bar.clear().fillStyle(0x0a0710).fillRect(-25,y,50,6).fillStyle(0x3a2230).fillRect(-24,y+1,48,4).fillStyle(c).fillRect(-24,y+1,48*Math.max(0,Math.min(1,f)),4);}
@@ -317,7 +321,6 @@ export class CatacombScene extends Phaser.Scene {
   }
   if(e.type==='skill'){const dest=this.actors.get(e.target)||this.hero;const tint=Number.parseInt((e.element?ELEMENT_COLOR[e.element as Element].fill:'#f1cf88').slice(1),16);const ring=this.add.circle(this.hero.root.x,this.hero.root.y+FEET,25,tint,.05).setStrokeStyle(3,tint,.85).setDepth(900);this.tweens.add({targets:ring,scale:s.hero.class==='Sword'?5:3,alpha:0,duration:500,onComplete:()=>ring.destroy()});if(s.hero.class==='Wand'){const bolt=this.add.circle(this.hero.root.x,this.hero.root.y-10,9,0xffb661).setDepth(1000);this.tweens.add({targets:bolt,x:dest.root.x,y:dest.root.y,duration:240,onComplete:()=>bolt.destroy()});}this.popup(this.hero.root.x,this.hero.root.y+this.hero.top-22,(e.label||'').toUpperCase(),'#f8d88c','#161927',15,true,-1);if(e.element)this.castVfx(e.element as Element);}
   if(e.type==='wake'){
-   const x=this.journey*ROOM_STRIDE+HALL_ENTRY_X-24,flash=this.add.rectangle(x,464,26,232,0xbff0ff,.55).setDepth(900);this.fade(flash,420,{scaleX:4});
    for(const m of s.enemies){const a=this.actors.get(m.id);if(!a||!isActive(s,m))continue;this.sleep(a,false);this.popup(a.root.x,a.root.y+a.top-24,'!','#ffd34d','#3a1d0e',26,true,m.id);
     if(!this.reduced)this.tweens.add({targets:a.body,y:FEET-14,duration:120,yoyo:true,ease:'Sine.easeOut',onComplete:()=>{if(a.body.active)a.body.y=FEET;}});}
   }

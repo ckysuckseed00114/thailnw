@@ -2,7 +2,7 @@ import {ATTRIBUTES,CLASSES,MAX_CHEST,MAX_INVENTORY,NAME_MAX,PETS,cleanName,ROOMS
 import {forgeCost,itemPower,monsterStats,petXp,regionIndex,salvageValue,sealCost,stats,xpForLevel} from './Formulas';
 import {drop,random} from './DropTable';
 import type {Authority} from './GameState';
-import {HALL_WALK,ROOM_WALK,walkMs} from './RoomTraversal';
+import {ENTRY_WALK,ROOM_ENTRY_X,ROOM_WALK,WAVE_X,walkMs} from './RoomTraversal';
 import {activeEnemies,focusEnemy,isActive} from './Targeting';
 import {findSkill,isAuto,isUnlocked,primarySkill,readyAt,skillsFor,type SkillDef} from './Skills';
 
@@ -15,7 +15,8 @@ export class CombatEngine implements Authority {
  /** Returns false when the chest is full and the item was salvaged into Bone instead. */
  private stash(item:Item){const s=this.state;if(s.chest.length<MAX_CHEST){s.chest.push(item);return true;}s.bone+=salvageValue(item);return false;}
  private record(reward:Reward,seconds=0){const s=this.state;const minute=Math.floor(s.now/60000)*60000;let h=s.history.find(h=>h.at===minute);if(!h){h={at:minute,seconds:0,lm:0,xp:0,bone:0,loot:0};s.history.push(h);}h.seconds+=seconds;for(const k of ['lm','xp','bone','loot'] as const)h[k]+=reward[k];s.history=s.history.filter(h=>h.at>=s.now-86400000);}
- private spawn(){
+ /** fromDoor: the hero walked past the previous room's checkpoint and keeps walking into this room's first hall. */
+ private spawn(fromDoor=false){
   const s=this.state;const boss=s.room===ROOMS;const m=monsterStats(regionIndex(s),boss);
   s.enemies=Array.from({length:boss?1:3},(_,i)=>({id:++s.serial,name:boss?'The Hollow Warden':['Mossling','Crypt Sentinel','Cave Stalker'][i],hp:m.hp,maxHp:m.hp,damage:m.damage,boss,attackAt:s.now+1800+i*400,stunnedUntil:0,attacks:0,summons:0,
    // One monster holds the left hall; the rest (and the boss) wait in the right hall.
@@ -23,12 +24,14 @@ export class CombatEngine implements Authority {
   s.nextRoomAt=0;s.wave=0;s.hallAt=0;s.walkFrom=0;s.attackAt=s.now+400;s.target=0;
   if(random(s)<.08){const kinds:Shrine[]=['Fury','Fortune','Haste','Renewal'];s.shrine={kind:kinds[Math.floor(random(s)*4)],until:s.now+60000};this.note(`${s.shrine.kind} shrine · blessed for 60 seconds.`);}
   this.events.push({type:'room',target:0});
-  this.walkOn();
+  if(fromDoor)this.walkTo(ENTRY_WALK(Math.min(...s.enemies.map(e=>e.wave))));else this.walkOn(ROOM_ENTRY_X);
  }
+ /** Starts a walk of the given length at the hero's move speed; the waiting wave wakes when it ends. */
+ private walkTo(distance:number){const s=this.state;s.walkFrom=s.now;s.hallAt=s.now+walkMs(distance,stats(s).moveSpeed);}
  /** When the current hall is clear but the next still holds monsters, the hero walks there at move speed before they wake. */
- private walkOn(){
+ private walkOn(from:number){
   const s=this.state;if(s.hallAt||!s.enemies.length||s.enemies.some(e=>isActive(s,e)))return;
-  s.walkFrom=s.now;s.hallAt=s.now+walkMs(HALL_WALK,stats(s).moveSpeed);
+  this.walkTo((WAVE_X as readonly number[])[Math.min(...s.enemies.map(e=>e.wave))]-from);
  }
  /** The walk reached the next hall: its monsters wake with fresh attack timers. */
  private wake(){
@@ -74,7 +77,7 @@ export class CombatEngine implements Authority {
    if(s.room===ROOMS){const r=regionIndex(s);s.cleared=Math.max(s.cleared,r);s.unlocked=Math.max(s.unlocked,Math.min(s.floor*11,r+1));this.note('The Warden and guards are defeated. The gate opens.');}
    s.walkFrom=s.now;s.nextRoomAt=s.now+walkMs(ROOM_WALK,stats(s).moveSpeed);
   }
-  this.walkOn();
+  this.walkOn((WAVE_X as readonly number[])[s.wave]);
  }
  tick(ms:number){
   // Events raised by dispatch() since the last tick (e.g. a manual cast) are delivered with this tick's events.
@@ -89,7 +92,7 @@ export class CombatEngine implements Authority {
   if(s.respawnAt){if(s.now>=s.respawnAt){s.respawnAt=0;s.room=1;s.hero.hp=stats(s).maxHp;const first=primarySkill(s);s.cooldowns[first.id]=s.now+first.cooldown;s.petAt=s.now+8000;s.shield=false;this.spawn();}return;}
   if(s.shrine&&s.shrine.until<=s.now)s.shrine=null;
   if(s.shrine?.kind==='Renewal')s.hero.hp=Math.min(stats(s).maxHp,s.hero.hp+stats(s).maxHp*.03*dt/1000);
-  if(!s.enemies.length){if(!s.nextRoomAt)this.spawn();else if(s.now>=s.nextRoomAt){if(s.room===ROOMS){s.room=1;if(s.autoAdvance&&s.region<11)s.region++;}else s.room++;this.spawn();}return;}
+  if(!s.enemies.length){if(!s.nextRoomAt)this.spawn();else if(s.now>=s.nextRoomAt){if(s.room===ROOMS){s.room=1;if(s.autoAdvance&&s.region<11)s.region++;}else s.room++;this.spawn(true);}return;}
   if(s.hallAt){if(s.now<s.hallAt)return;this.wake();}
   if(!activeEnemies(s).length){this.kills();return;}
   if(s.now>=s.attackAt){this.strike([this.focus().id],1);s.attackAt=s.now+stats(s).interval;}
