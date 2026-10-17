@@ -9,6 +9,9 @@ import {Bar,Frame} from '../components/Frame';
 import {bindStore} from '../hud/gameSignal';
 import {PlayerFrame} from '../hud/PlayerFrame';
 import {Minimap} from '../hud/Minimap';
+import {Purse,TopBar} from '../hud/TopBar';
+import {QuestTracker} from '../hud/QuestTracker';
+import {SoundFX} from '../../services/SoundFX';
 
 const SWATCHES:[string,string][]=[['--tf-gold','ทองอุ่น'],['--tf-leaf','ใบไม้'],['--tf-terracotta','ดินเผา'],['--tf-jade','หยก'],['--tf-sky','ฟ้า'],['--tf-lotus','บัวชมพู'],['--tf-wood','ไม้เข้ม'],['--tf-ink','หมึก'],['--tf-gold-edge','ขอบทอง'],['--tf-gold-hi','ทองไฮไลต์'],['--tf-spirit','ฟ้าวิญญาณ'],['--tf-hp','HP'],['--tf-sp','SP'],['--tf-xp','XP']];
 
@@ -42,9 +45,9 @@ function Demo(){
     <Frame style={{padding:'14px',width:'260px',display:'grid',gap:'6px'}}><Bar kind="hp" value={18420} max={18420}/><Bar kind="sp" value={64} max={100}/><Bar kind="xp" value={3} max={5}/><div><span class="tf-plate">Lv. 252</span> <span class="tf-key">M</span> <span class="tf-key">ESC</span></div></Frame>
    </div>
   </Section>
-  <Section title="HUD: Player frame + Minimap">
-   <div style={{position:'relative',height:'270px',background:'#202a3c',border:'1px solid #000',overflow:'hidden'}}>
-    <PlayerFrame/><Minimap onOpenMap={()=>alert('เปิดแผนที่โลก')}/>
+  <Section title="HUD Phase 1: Player frame · Top bar · Purse · Minimap · Quest tracker">
+   <div class="hud-root" style={{position:'relative',minHeight:'420px',background:'#202a3c',border:'1px solid #000'}}>
+    <PlayerFrame/><TopBar sfx={new SoundFX()}/><Purse/><Minimap onOpenMap={()=>alert('เปิดแผนที่โลก')}/><QuestTracker onOpenJournal={()=>alert('เปิดสมุดภารกิจ')}/>
    </div>
   </Section>
  </main>;

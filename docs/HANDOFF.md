@@ -37,7 +37,7 @@ src/ui/
   UIManager.ts             modal ทั้งหมด + HUD ส่วนที่เหลือ (HTML string), คีย์ลัด I/C/P/B/M/Q (M = แผนที่โลก)
   theme/tokens.css         ★ design tokens ธีม Thai Fantasy (`--tf-*`) + คลาส .tf-frame/.tf-bar/.tf-plate/.tf-key
   components/Frame.tsx     Preact: Frame (กรอบไม้/หมึก + มุมลายกนก SVG), Bar (HP/SP/XP)
-  hud/                     HUD v2 (Preact): Hud.tsx mount, gameSignal.ts (state → signal), PlayerFrame.tsx, Minimap.tsx, hud.css
+  hud/                     HUD v2 (Preact, CSS grid): Hud.tsx mount, gameSignal.ts (state → signal), prefs.ts (ขนาด UI/เสียง/tracker ใน localStorage `embermarch.ui.v1`), PlayerFrame, TopBar (+Purse, QuickSettings), Minimap, QuestTracker, hud.css
   design/DesignDemo.tsx    หน้า design system (dev เท่านั้น: http://127.0.0.1:5173/design.html)
   icons.ts                 SVG icon ของแถบเมนู
 src/services/
@@ -87,7 +87,7 @@ Store.notify(state, events) → UIManager (HUD)  +  CatacombScene (วาด)  +
 
 | ตรวจ | ผล |
 | --- | --- |
-| `pnpm test` | ✅ 66/66 ผ่าน |
+| `pnpm test` | ✅ 69/69 ผ่าน |
 | `pnpm build` (tsc strict + vite) | ✅ ผ่าน · Phaser chunk 1.2 MB / 332 KB gzip (มี warning chunk ใหญ่ ซึ่งเป็นเรื่องปกติ) |
 | ทดสอบในเบราว์เซอร์ (port 5176, เซฟแยก) | ✅ เลือก Sword → สู้ → ข้ามห้อง → เข้า region 2 ได้ · desktop 1024×768 และ mobile 375×812 แสดงผลถูก · tab ใหม่ไม่มี console error |
 
@@ -134,6 +134,7 @@ Store.notify(state, events) → UIManager (HUD)  +  CatacombScene (วาด)  +
 
 ## 9. บันทึกการส่งต่อ (ใหม่สุดอยู่บน)
 
+- **2026-10-17 (9)** — UI/UX Phase 1 ครบ (1.4–1.6): Quest tracker (ย่อได้, คลิกเปิดสมุดภารกิจ, มือถือเริ่มแบบย่อ) · Top bar ชื่อพื้นที่ + ตั้งค่าด่วน (ขนาด UI 90–125%, เสียง, เต็มจอ) · Purse · HUD เปลี่ยนเป็น CSS grid + safe area (`viewport-fit=cover`) · ซ่อน DOM เดิม (dungeon-title, header, room-objective, shrine-card) · ตรวจไม่ทับกันที่ 375/768/1280/1920 ทั้งที่ 100% และ 125% · test 69 · JS app 100 KB (38 KB gzip)
 - **2026-10-17 (8)** — UI/UX งาน 1.1–1.3 เสร็จ: ติดตั้ง Preact 10 + @preact/signals (JSX ผ่าน tsconfig `jsxImportSource`) · design tokens + ฟอนต์ไทย (Kanit/Sarabun/Srisakdi) · Frame/Bar component · HUD v2 แทนการ์ดเดิม: Player frame (รูป, ชื่อ, Lv, HP, **SP = ชาร์จสกิล ยังไม่ใช่ MP**, XP, buff ศาลเจ้า/โล่/สัตว์เลี้ยง) + มินิแมพวงกลม (node ห้อง, ตำแหน่งตอนเดิน, นาฬิกาจาก `s.now`, M เปิดแผนที่โลก) · หน้า `/design.html` · แก้ปัญหาวรรณยุกต์ไทยโดนตัด (line-height) · test 66 · ทดสอบ desktop+mobile แล้วไม่มี error · JS app 64→94 KB
 - **2026-10-17 (7)** — ได้ภาพอ้างอิง UI แนว Thai Fantasy MMORPG 2 ชุด ("The Shattered Siam" pixel โทนมืด, "Siam Spirit Chronicles" chibi สว่าง) → เขียน [UI_UX_PLAN.md](UI_UX_PLAN.md): แยก component เทียบกับโค้ดปัจจุบัน, 4 เฟส 28 งาน (มีรหัสงาน), palette/ฟอนต์ไทย, ข้อตัดสินใจ U1–U6 (สไตล์ผสม, คง 5 อาชีพ, hotbar+auto, เพิ่ม MP, ชื่อสถานที่ไทย, Preact) · ยังไม่ได้เริ่มเขียนโค้ด
 - **2026-10-17 (6)** — ทิศทางใหม่: เปลี่ยนเป็นเกมออนไลน์และตัด NFT/Token ทั้งหมด → เขียน [ONLINE_PLAN.md](ONLINE_PLAN.md) (ยังเป็นร่าง รอยืนยัน D1–D8) · balance baseline จาก sim 12 ชม.: Floor 1 จบใน 8 นาที, ตาย 901 ครั้ง, forge โตแบบทวีคูณ (สคริปต์ sim ยังอยู่นอก repo จะย้ายเข้า `tools/sim` ในเฟส P1)

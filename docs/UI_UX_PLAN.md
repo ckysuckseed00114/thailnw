@@ -1,6 +1,6 @@
 # แผนพัฒนา UI/UX / GUI — Thai Fantasy MMORPG
 
-> สถานะ: **กำลังทำ** · เสร็จแล้ว: 1.1, 1.2, 1.3 (2026-10-17) · ดูหน้า design system ได้ที่ `/design.html` ตอนรัน `pnpm dev` · เป็นส่วนขยายของเฟส P2 ใน [ONLINE_PLAN.md](ONLINE_PLAN.md)
+> สถานะ: **Phase 1 เสร็จ** (1.1–1.6, 2026-10-17) · ถัดไป Phase 2 · ดูหน้า design system ได้ที่ `/design.html` ตอนรัน `pnpm dev` · เป็นส่วนขยายของเฟส P2 ใน [ONLINE_PLAN.md](ONLINE_PLAN.md)
 > ภาพอ้างอิง 2 ชุด: **A** "The Shattered Siam" (pixel art โทนมืด, ทองกับไม้, 3 อาชีพ) และ **B** "Siam Spirit Chronicles" (chibi นุ่มนวล สว่าง, 4 อาชีพ)
 > ใช้เป็น **ทิศทางภาพ** เท่านั้น งานจริงต้องวาดและออกแบบใหม่ทั้งหมด ไม่คัดลอกภาพหรือ asset จากภาพอ้างอิง
 > รหัสงาน (เช่น `1.3`) ตรงกับเช็กลิสต์ที่ใช้เลือกงาน
@@ -95,9 +95,9 @@
 | 1.1 ✅ | **Foundation:** design tokens (สี, ฟอนต์ไทย, spacing) + component กรอบ `Frame` + ติดตั้ง Preact | `src/ui/theme/tokens.css`, `src/ui/components/Frame.tsx`, `design.html` | หน้า demo แสดงสี/ฟอนต์/กรอบครบ |
 | 1.2 ✅ | Player frame: รูป ชื่อ Lv HP/**SP**/XP + buff | `src/ui/hud/PlayerFrame.tsx` · ตอนนี้ SP = การชาร์จสกิลอัตโนมัติ (7 วิ) **ยังไม่ใช่ MP จริง** (รอ U4) | HP/SP ขยับลื่น (tween) ตัวเลขตรงกับ state |
 | 1.3 ✅ | Minimap วงกลม: node ห้อง ประตู บอส เวลา ชื่อพื้นที่ ปุ่ม M | `src/ui/hud/Minimap.tsx` (SVG) · ปุ่ม/คีย์ **M** = แผนที่โลก (Marketplace ไม่มีคีย์ลัดแล้ว) | ห้องปัจจุบันชัด คลิกแล้วเปิดแผนที่โลก |
-| 1.4 | Quest tracker ด้านขวา (ติดตามได้ 3 รายการ) | `QuestTracker.tsx` | progress อัปเดตสด และย่อได้ |
-| 1.5 | Top bar: ชื่อพื้นที่ (ป้ายกลาง), เงิน Gold/Bone, ปุ่มตั้งค่าด่วน | `TopBar.tsx` | ไม่บังพื้นที่เล่นเกิน 12% ของความสูงจอ |
-| 1.6 | Layout grid + safe areas + โหมด UI scale (90–125%) | `HudLayout.tsx` | ไม่มีองค์ประกอบทับกันที่ 375/768/1280/1920px |
+| 1.4 ✅ | Quest tracker ด้านขวา (ติดตามได้ 3 รายการ) | `QuestTracker.tsx` · เป้าหมายห้อง + เควสหลักที่ยังไม่รับรางวัล (ที่รับได้แล้วขึ้นก่อน) คลิกเควสเปิดสมุดภารกิจ · มือถือเริ่มแบบย่อ | progress อัปเดตสด และย่อได้ |
+| 1.5 ✅ | Top bar: ชื่อพื้นที่ (ป้ายกลาง), เงิน Gold/Bone, ปุ่มตั้งค่าด่วน | `TopBar.tsx` (TopBar + Purse + QuickSettings: ขนาด UI, เสียง, เต็มจอ) · Purse ยังเป็น $LM จนกว่าจะทำ P0 | ไม่บังพื้นที่เล่นเกิน 12% ของความสูงจอ → desktop/tablet 7–10% ✅ · **มือถือ 20%** (ชื่อพื้นที่ต้องต่อใต้ Player frame, layout เดิม 22%) |
+| 1.6 ✅ | Layout grid + safe areas + โหมด UI scale (90–125%) | `hud.css` (grid areas ตาม breakpoint, `env(safe-area-inset-*)`, `zoom:var(--tf-ui-scale)`), `prefs.ts` (localStorage แบบมี guard) | ไม่มีองค์ประกอบทับกันที่ 375/768/1280/1920px ✅ (ตรวจด้วยสคริปต์วัด bounding box ทั้งที่ 100% และ 125%) |
 
 ### Phase 2 — Action & Combat Interface (~2 สัปดาห์)
 

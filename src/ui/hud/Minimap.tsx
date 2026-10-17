@@ -1,4 +1,4 @@
-import {REGIONS,ROOMS} from '../../core/models';
+import {ROOMS} from '../../core/models';
 import {traversalProgress} from '../../core/RoomTraversal';
 import {useGame} from './gameSignal';
 
@@ -12,7 +12,6 @@ export function Minimap({onOpenMap}:{onOpenMap:()=>void}){
  const hero=i<ROOMS-1?[from[0]+(to[0]-from[0])*p,from[1]+(to[1]-from[1])*p]:from;
  const clock=new Date(s.now);
  return <div class="mm" aria-label="แผนที่ย่อ">
-  <span class="mm-area tf-plate" title={`ชั้น ${s.floor} · ภูมิภาค ${s.region}`}>{REGIONS[s.region-1]}</span>
   <span class="mm-clock">{pad(clock.getHours())}:{pad(clock.getMinutes())}</span>
   <svg class="mm-disc" viewBox="0 0 100 100" role="img" aria-label={`ห้อง ${s.room} จาก ${ROOMS}${s.room===ROOMS?' (ห้องบอส)':''}`}>
    <defs><clipPath id="mm-clip"><circle cx="50" cy="50" r="44"/></clipPath></defs>
