@@ -11,7 +11,8 @@ Idle dungeon crawler: TypeScript + Vite + Phaser 3, local-only (no backend). Pac
 ## Rules
 - All game rules live in `src/core` (no DOM/Phaser imports). `src/game` and `src/ui` only render state and send `Command`s through `Store.dispatch`.
 - Core randomness goes through `random(s)` in `DropTable.ts`, and core time through `s.now`. Never use `Math.random()` or `Date.now()` in core.
-- New `*At` timers must also be shifted in `AFKManager.resume()`.
+- New `*At` timers (and per-skill `cooldowns`) must also be shifted in `AFKManager.resume()`.
+- Skills live in `src/core/Skills.ts`; slot 1 mirrors `SKILLS` in models.ts. Changing enemy-hit RNG order breaks determinism of existing saves' outcomes — keep draw order stable.
 - Save format changes need `createState` + `validateSave` updates, a version bump and a migration.
 - Match the existing dense code style unless the user agrees to reformat.
 - New UI is Preact (`src/ui/hud`, `src/ui/components`) styled only with the `--tf-*` tokens in `src/ui/theme/tokens.css`; follow `docs/UI_UX_PLAN.md` task IDs. Preview components at `/design.html` in dev. Thai text needs line-height ≥ 1.4 wherever overflow is clipped.

@@ -28,6 +28,7 @@ src/core/                  ★ กฎเกมทั้งหมด — ห้�
   Formulas.ts              สูตร stats/XP/forge/salvage/seal/monster
   DropTable.ts             PRNG xorshift (random) + สุ่มไอเทม (drop)
   AFKManager.ts            offlineReward() + resume() (เลื่อน timer ทุกตัวตามเวลาที่หายไป)
+  Skills.ts                ตารางสกิล 6 ช่อง/คลาส (1–5 + R), ธาตุ, เลเวลปลดล็อก, helper (`skillsFor`, `readyAt`, `isAuto`)
   RoomTraversal.ts         ROOM_TRAVERSE_MS=6500 และเส้นทางเดินข้ามห้อง (ใช้ร่วม core กับ renderer)
 src/game/                  ★ presentation อย่างเดียว — ห้ามตัดสินดาเมจ/ของดรอป/เงิน
   scenes/CatacombScene.ts  Phaser scene เดียวที่ใช้งาน: ห้อง 3 ส่วนวนกัน, actor, เลขดาเมจ/ฮีล, วงเตือนบอส, ป้ายชื่อ, กล้อง
@@ -63,7 +64,7 @@ Store.notify(state, events) → UIManager (HUD)  +  CatacombScene (วาด)  +
 1. **กฎเกมอยู่ใน `src/core` เท่านั้น** — renderer/UI แค่อ่าน state แล้ววาด ถ้าจะเพิ่มกลไกใหม่ ให้เพิ่ม `Command` ใน `models.ts` → จัดการใน `CombatEngine.dispatch` → เขียน test
 2. **ความสุ่มต้องผ่าน `random(s)`** ใน DropTable (seed อยู่ในเซฟ) ห้ามใช้ `Math.random()` ใน core ไม่งั้น test ไม่ deterministic
 3. **เวลาใน core ใช้ `s.now`** ไม่ใช่ `Date.now()` (ยกเว้น main.ts ตอน resume)
-4. **เปลี่ยนรูปแบบเซฟ** → แก้ `createState` + `validateSave` แล้วเพิ่มขั้นใน `migrateSave()` (Storage.ts) พร้อม test · ตอนนี้ **`version:2`** (v1→v2 เพิ่ม `hero.name`) ตอนโหลดจะ migrate ใน memory และเก็บเซฟเดิมไว้ที่ `embermarch.save.v1.backup-v1` ครั้งเดียว · ชื่อ key `embermarch.save.v1` เป็นแค่ชื่อช่องเก็บ ไม่ใช่เวอร์ชัน ถ้าเซฟไม่ผ่าน validation เกมจะหยุดและไม่ลบเซฟ
+4. **เปลี่ยนรูปแบบเซฟ** → แก้ `createState` + `validateSave` แล้วเพิ่มขั้นใน `STEPS` ของ `migrateSave()` (Storage.ts) พร้อม test · ตอนนี้ **`version:3`** (v1→v2 เพิ่ม `hero.name`, v2→v3 เปลี่ยน `skillAt` เป็น `cooldowns`/`autoCast` ต่อสกิล) ตอนโหลดจะ migrate ใน memory และเก็บเซฟเดิมไว้ที่ `embermarch.save.v1.backup-v1` ครั้งเดียว · ชื่อ key `embermarch.save.v1` เป็นแค่ชื่อช่องเก็บ ไม่ใช่เวอร์ชัน ถ้าเซฟไม่ผ่าน validation เกมจะหยุดและไม่ลบเซฟ
 5. timer ใหม่ใน state (`xxxAt`) ต้องเพิ่มใน `resume()` ของ AFKManager ด้วย ไม่งั้นจะเพี้ยนหลังกลับมาจาก offline
 
 ## 4. ระบบเกมสรุปสั้น
@@ -87,7 +88,7 @@ Store.notify(state, events) → UIManager (HUD)  +  CatacombScene (วาด)  +
 
 | ตรวจ | ผล |
 | --- | --- |
-| `pnpm test` | ✅ 69/69 ผ่าน |
+| `pnpm test` | ✅ 88/88 ผ่าน |
 | `pnpm build` (tsc strict + vite) | ✅ ผ่าน · Phaser chunk 1.2 MB / 332 KB gzip (มี warning chunk ใหญ่ ซึ่งเป็นเรื่องปกติ) |
 | ทดสอบในเบราว์เซอร์ (port 5176, เซฟแยก) | ✅ เลือก Sword → สู้ → ข้ามห้อง → เข้า region 2 ได้ · desktop 1024×768 และ mobile 375×812 แสดงผลถูก · tab ใหม่ไม่มี console error |
 
@@ -134,6 +135,7 @@ Store.notify(state, events) → UIManager (HUD)  +  CatacombScene (วาด)  +
 
 ## 9. บันทึกการส่งต่อ (ใหม่สุดอยู่บน)
 
+- **2026-10-17 (10)** — UI/UX 2.1 / 2.2 / 2.6: **ระบบสกิลใหม่ใน core** (6 สกิล/คลาส, คูลดาวน์แยกต่อสกิล, `cast`/`autocast`, save v3 + backup-v2) · event จาก `dispatch` ไม่หายแล้ว (`tick` คืน event ที่สะสมไว้) · core บอกเหตุผลที่หลบได้ DODGE/SHIELD/BLOCK โดยลำดับการสุ่มเหมือนเดิม · Hotbar (ปุ่ม 1–5/R + auto + เดินหน้าอัตโนมัติ แทน battle-footer เดิม) · ตัวเลขดาเมจตามธาตุ + ตั้งค่า + จำกัดจำนวน · กล่องแชต/ระบบแบบแท็บ · toast ย้ายขึ้นไม่ทับ hotbar · ตรวจไม่ทับกันที่ 375/768/1024/1280/1920 · test 88 · **balance sim (seed เดียว):** ความเร็วโดยรวมใกล้เดิม แต่ Sword ตายเพิ่มจาก 901 เป็น 1,809 ครั้งใน 12 ชม. และ Axe แซงคลาสอื่น (region 26 vs 21–23 ใน 3 ชม.) → ต้องจูนใน Balance v2
 - **2026-10-17 (9)** — UI/UX Phase 1 ครบ (1.4–1.6): Quest tracker (ย่อได้, คลิกเปิดสมุดภารกิจ, มือถือเริ่มแบบย่อ) · Top bar ชื่อพื้นที่ + ตั้งค่าด่วน (ขนาด UI 90–125%, เสียง, เต็มจอ) · Purse · HUD เปลี่ยนเป็น CSS grid + safe area (`viewport-fit=cover`) · ซ่อน DOM เดิม (dungeon-title, header, room-objective, shrine-card) · ตรวจไม่ทับกันที่ 375/768/1280/1920 ทั้งที่ 100% และ 125% · test 69 · JS app 100 KB (38 KB gzip)
 - **2026-10-17 (8)** — UI/UX งาน 1.1–1.3 เสร็จ: ติดตั้ง Preact 10 + @preact/signals (JSX ผ่าน tsconfig `jsxImportSource`) · design tokens + ฟอนต์ไทย (Kanit/Sarabun/Srisakdi) · Frame/Bar component · HUD v2 แทนการ์ดเดิม: Player frame (รูป, ชื่อ, Lv, HP, **SP = ชาร์จสกิล ยังไม่ใช่ MP**, XP, buff ศาลเจ้า/โล่/สัตว์เลี้ยง) + มินิแมพวงกลม (node ห้อง, ตำแหน่งตอนเดิน, นาฬิกาจาก `s.now`, M เปิดแผนที่โลก) · หน้า `/design.html` · แก้ปัญหาวรรณยุกต์ไทยโดนตัด (line-height) · test 66 · ทดสอบ desktop+mobile แล้วไม่มี error · JS app 64→94 KB
 - **2026-10-17 (7)** — ได้ภาพอ้างอิง UI แนว Thai Fantasy MMORPG 2 ชุด ("The Shattered Siam" pixel โทนมืด, "Siam Spirit Chronicles" chibi สว่าง) → เขียน [UI_UX_PLAN.md](UI_UX_PLAN.md): แยก component เทียบกับโค้ดปัจจุบัน, 4 เฟส 28 งาน (มีรหัสงาน), palette/ฟอนต์ไทย, ข้อตัดสินใจ U1–U6 (สไตล์ผสม, คง 5 อาชีพ, hotbar+auto, เพิ่ม MP, ชื่อสถานที่ไทย, Preact) · ยังไม่ได้เริ่มเขียนโค้ด

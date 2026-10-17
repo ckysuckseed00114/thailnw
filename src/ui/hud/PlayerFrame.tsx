@@ -1,12 +1,12 @@
 import {stats,xpForLevel} from '../../core/Formulas';
 import {SKILLS,type GameState,type Shrine} from '../../core/models';
 import {heroSVG} from '../../game/HeroArt';
+import {primarySkill,readyAt} from '../../core/Skills';
 import {Bar,Frame} from '../components/Frame';
 import {useGame} from './gameSignal';
 
-/** Auto-skill cooldown in the core (CombatEngine sets skillAt = now + 7000). Shown as SP until a real MP resource exists (UI_UX_PLAN U4). */
-const SKILL_COOLDOWN_MS=7000;
-export function skillCharge(s:GameState){return s.respawnAt?0:Math.max(0,Math.min(1,1-(s.skillAt-s.now)/SKILL_COOLDOWN_MS));}
+/** Charge of the slot-1 skill. Shown as SP until a real MP resource exists (UI_UX_PLAN U4). */
+export function skillCharge(s:GameState){const k=primarySkill(s);return s.respawnAt?0:Math.max(0,Math.min(1,1-(readyAt(s,k)-s.now)/k.cooldown));}
 
 const BUFF_TEXT:Record<Shrine,string>={Fury:'พลังโทสะ · ดาเมจ ×2',Fortune:'โชคลาภ · เงินและของ ×2',Haste:'เร่งเร้า · ตีเร็วขึ้น 50%',Renewal:'ฟื้นฟู · ฟื้น HP 3%/วิ'};
 // Small original glyphs, one per effect, drawn in currentColor.

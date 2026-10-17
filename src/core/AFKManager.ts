@@ -12,7 +12,8 @@ export function resume(s:GameState,now:number){
  const reward=offlineReward(s,now);
  for(const k of ['lm','xp','bone','loot','seconds'] as const)s.afk[k]+=reward[k];
  const delta=Math.max(0,now-s.now);
- for(const k of ['attackAt','skillAt','petAt','respawnAt','nextRoomAt'] as const)if(s[k])s[k]+=delta;
+ for(const k of ['attackAt','petAt','respawnAt','nextRoomAt'] as const)if(s[k])s[k]+=delta;
+ for(const id of Object.keys(s.cooldowns))if(s.cooldowns[id])s.cooldowns[id]+=delta;
  for(const e of s.enemies){e.attackAt+=delta;if(e.stunnedUntil)e.stunnedUntil+=delta;}
  s.now=Math.max(s.now,now);s.savedAt=s.now;
 }

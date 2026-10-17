@@ -1,6 +1,6 @@
 # แผนพัฒนา UI/UX / GUI — Thai Fantasy MMORPG
 
-> สถานะ: **Phase 1 เสร็จ** (1.1–1.6, 2026-10-17) · ถัดไป Phase 2 · ดูหน้า design system ได้ที่ `/design.html` ตอนรัน `pnpm dev` · เป็นส่วนขยายของเฟส P2 ใน [ONLINE_PLAN.md](ONLINE_PLAN.md)
+> สถานะ: **Phase 1 เสร็จ** · Phase 2 เสร็จแล้ว: 2.1, 2.2, 2.6 (2026-10-17) · เหลือ 2.3, 2.4, 2.5 · ดูหน้า design system ได้ที่ `/design.html` ตอนรัน `pnpm dev` · เป็นส่วนขยายของเฟส P2 ใน [ONLINE_PLAN.md](ONLINE_PLAN.md)
 > ภาพอ้างอิง 2 ชุด: **A** "The Shattered Siam" (pixel art โทนมืด, ทองกับไม้, 3 อาชีพ) และ **B** "Siam Spirit Chronicles" (chibi นุ่มนวล สว่าง, 4 อาชีพ)
 > ใช้เป็น **ทิศทางภาพ** เท่านั้น งานจริงต้องวาดและออกแบบใหม่ทั้งหมด ไม่คัดลอกภาพหรือ asset จากภาพอ้างอิง
 > รหัสงาน (เช่น `1.3`) ตรงกับเช็กลิสต์ที่ใช้เลือกงาน
@@ -103,12 +103,12 @@
 
 | รหัส | งาน | ไฟล์/เทคนิค | เกณฑ์เสร็จ |
 | --- | --- | --- | --- |
-| 2.1 | Skill hotbar 1–5 + R: วง cooldown, ปุ่มลัด, auto toggle, tooltip | `Hotbar.tsx` + core: command `cast` + สกิลหลายตัวต่อคลาส | กดเองหรือ auto ก็ได้ผลเท่ากัน · มี test ใน core |
-| 2.2 | ตัวเลขดาเมจ v2: ปกติ/คริ/ฮีล/บล็อก/หลบ/ธาตุ + ตั้งค่าลดความถี่ | `CatacombScene` popup + settings | อ่านออกที่ 60fps · ปิดได้ |
+| 2.1 ✅ | Skill hotbar 1–5 + R: วง cooldown, ปุ่มลัด, auto toggle, tooltip | `src/core/Skills.ts` (6 สกิล/คลาส: slot 1 = สกิลเดิมค่าเดิม, 2–5 ปลดที่ Lv 5/10/20/30, R ที่ Lv 15) · command `cast`/`autocast` · state `cooldowns`/`autoCast` (save v3) · `Hotbar.tsx` (ปุ่ม 1–5/R, A = auto, ปุ่มเดินหน้าอัตโนมัติ) | กดเองหรือ auto ก็ได้ผลเท่ากัน · มี test ใน core (`tests/skills.test.ts`) |
+| 2.2 ✅ | ตัวเลขดาเมจ v2: ปกติ/คริ/ฮีล/บล็อก/หลบ/ธาตุ + ตั้งค่าลดความถี่ | `CatacombScene.popup` · สีตามธาตุ (`ui/theme/elements.ts`) · ป้าย DODGE/SHIELD/BLOCK/SLAM แยกจาก core (ลำดับการสุ่มเหมือนเดิม) · ตั้งค่า ทั้งหมด/เฉพาะสำคัญ/ปิด · จำกัดจำนวนบนจอ 28 + ซ้อนไม่ทับ | อ่านออกที่ 60fps · ปิดได้ |
 | 2.3 | Target frame + ป้ายชื่อศัตรู + แถบบอสมี phase | `TargetFrame.tsx` | คลิกศัตรูแล้วเลือกเป้าได้ |
 | 2.4 | Hit feedback: กระพริบ, สั่นเบา ๆ, VFX สกิลแยกตามคลาส (เวทฟ้าวิญญาณ, สายฟ้า, หิน) | Phaser particles | เคารพ reduced motion |
 | 2.5 | ระบบปุ่มลัด + ตั้งค่าเปลี่ยนปุ่ม (remap) + หน้า "ปุ่มลัด" | `keybinds.ts` | เปลี่ยนแล้วบันทึกไว้ ไม่ชนกับช่องพิมพ์ |
-| 2.6 | Chat/System box แบบแท็บ (ตอนนี้ใช้ log ระบบ, แชตจริงอยู่ใน ONLINE P4) | `ChatBox.tsx` | แท็บกรองได้ เลื่อนดูย้อนหลังได้ |
+| 2.6 ✅ | Chat/System box แบบแท็บ (ตอนนี้ใช้ log ระบบ, แชตจริงอยู่ใน ONLINE P4) | `ChatBox.tsx` · core ส่ง event `log` ทุกครั้งที่มีบันทึก · ประวัติ 200 บรรทัดฝั่ง client (ไม่บันทึก) · ย่อได้ (มือถือเริ่มแบบย่อ) | แท็บกรองได้ เลื่อนดูย้อนหลังได้ (เลื่อนขึ้นแล้วไม่ดีดลงเอง) |
 
 ### Phase 3 — Menus & Navigation (~3 สัปดาห์)
 

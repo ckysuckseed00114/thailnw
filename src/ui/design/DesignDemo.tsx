@@ -17,7 +17,7 @@ const SWATCHES:[string,string][]=[['--tf-gold','ทองอุ่น'],['--tf-l
 
 // A sample character mid-fight so the HUD components render realistic values.
 const s=createState(Date.parse('2026-10-17T21:37:00'),7);const engine=new CombatEngine(s);engine.dispatch({type:'class',value:'Wand',name:'ลักกี้'});
-s.hero.level=42;s.hero.hp=55;s.room=3;s.region=6;s.shrine={kind:'Haste',until:s.now+42000};s.shield=true;s.skillAt=s.now+2600;s.hero.xp=1800;
+s.hero.level=42;s.hero.hp=55;s.room=3;s.region=6;s.shrine={kind:'Haste',until:s.now+42000};s.shield=true;s.cooldowns['Wand-1']=s.now+2600;s.cooldowns['Wand-2']=s.now+5000;s.hero.xp=1800;
 const store=new Store(engine);bindStore(store);
 
 function Section({title,children}:{title:string;children:preact.ComponentChildren}){return <section style={{margin:'0 0 28px'}}><h2 class="tf-title" style={{fontSize:'18px',margin:'0 0 12px'}}>{title}</h2>{children}</section>;}

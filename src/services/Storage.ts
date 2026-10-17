@@ -1,19 +1,27 @@
 import {createState} from '../core/GameState';
+import {ALL_SKILL_IDS} from '../core/Skills';
 import {ATTRIBUTES,CLASSES,DEFAULT_NAME,PETS,RARITIES,SLOTS,cleanName,type GameState,type Item} from '../core/models';
 export interface SaveRepository {load():GameState|null;save(state:GameState):void}
 // The storage slot keeps its original name; the format version lives inside the save.
 const KEY='embermarch.save.v1';
+type Raw=Record<string,unknown>&{version?:unknown;hero?:Record<string,unknown>};
+// One step per format version; each returns a new object so the original stays intact for the backup.
+const STEPS:Record<number,(s:Raw)=>Raw>={
+ 1:s=>({...s,version:2,hero:{...s.hero,name:DEFAULT_NAME}}),
+ // v3: the single auto-skill timer becomes per-skill cooldowns; slot 1 keeps its remaining time.
+ 2:({skillAt,...s})=>({...s,version:3,cooldowns:{[`${String(s.hero?.class)}-1`]:Number.isFinite(skillAt)?skillAt:0},autoCast:{}}),
+};
 /** Upgrades older save formats in memory. Unknown shapes are returned untouched for validateSave to reject. */
 export function migrateSave(value:unknown):unknown{
- const s=value as {version?:unknown;hero?:unknown};
- if(s&&s.version===1&&s.hero&&typeof s.hero==='object')return {...s,version:2,hero:{...s.hero as object,name:DEFAULT_NAME}};
- return value;
+ let s=value as Raw;
+ while(s&&typeof s==='object'&&s.hero&&typeof s.hero==='object'&&typeof s.version==='number'&&STEPS[s.version])s=STEPS[s.version](s);
+ return s;
 }
 const finite=(v:unknown)=>typeof v==='number'&&Number.isFinite(v)&&v>=0;
 function item(i:Item){return i&&Number.isSafeInteger(i.id)&&SLOTS.includes(i.slot)&&RARITIES.includes(i.rarity)&&typeof i.name==='string'&&i.name.length<100&&finite(i.base)&&finite(i.invested)&&Number.isInteger(i.forge)&&i.forge>=0&&i.forge<=60&&typeof i.locked==='boolean';}
 export function validateSave(value:unknown):value is GameState{
  try{
-  const s=value as GameState,base=createState();if(!s||s.version!==2)return false;
+  const s=value as GameState,base=createState();if(!s||s.version!==3)return false;
   for(const [key,v] of Object.entries(base)){const actual=s[key as keyof GameState];if(typeof v==='number'&&!finite(actual))return false;if(typeof v==='boolean'&&typeof actual!=='boolean')return false;}
   if(cleanName(s.hero.name)!==s.hero.name||!CLASSES.includes(s.hero.class)||!PETS.includes(s.pet)||!Number.isInteger(s.hero.level)||s.hero.level<1||s.hero.level>1000||!finite(s.hero.xp)||!finite(s.hero.hp)||!Number.isInteger(s.hero.points)||s.hero.points<0)return false;
   if(!ATTRIBUTES.every(a=>Number.isInteger(s.hero.attributes[a])&&s.hero.attributes[a]>=0)||s.hero.attributes.Vampirism>20)return false;
@@ -26,6 +34,8 @@ export function validateSave(value:unknown):value is GameState{
   if(!s.afk||!Object.values(s.afk).every(finite)||!Number.isInteger(s.afk.loot)||s.afk.loot>100000)return false;
   if(!Array.isArray(s.enemies)||s.enemies.length>3||!s.enemies.every(e=>finite(e.id)&&finite(e.hp)&&finite(e.maxHp)&&finite(e.damage)&&finite(e.attackAt)&&finite(e.stunnedUntil)&&finite(e.attacks)&&typeof e.boss==='boolean'&&typeof e.name==='string'))return false;
   if(s.shrine&&(!['Fury','Fortune','Haste','Renewal'].includes(s.shrine.kind)||!finite(s.shrine.until)))return false;
+  const record=(o:unknown,ok:(v:unknown)=>boolean)=>!!o&&typeof o==='object'&&!Array.isArray(o)&&Object.entries(o).every(([k,v])=>ALL_SKILL_IDS.has(k)&&ok(v));
+  if(!record(s.cooldowns,finite)||!record(s.autoCast,v=>typeof v==='boolean'))return false;
   return Array.isArray(s.log)&&s.log.every(t=>typeof t==='string')&&Array.isArray(s.questClaims)&&s.questClaims.every(t=>typeof t==='string');
  }catch{return false;}
 }
